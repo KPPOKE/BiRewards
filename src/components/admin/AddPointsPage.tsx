@@ -12,13 +12,12 @@ const AddPointsPage: React.FC = () => {
   const [points, setPoints] = useState<number>(0);
   const [message, setMessage] = useState<string | null>(null);
 
-  // Simulasi ambil data user dari backend
   useEffect(() => {
-    fetch('http://localhost:5000/users') // ganti dengan endpoint kamu
-      .then(res => res.json())
-      .then(data => setUsers(data))
-      .catch(() => setMessage('Failed to fetch users.'));
-  }, []);
+  fetch('http://localhost:5173/users') // Ganti URL sesuai backend
+    .then(res => res.json())
+    .then(data => setUsers(data))
+    .catch(() => setMessage('Failed to fetch users.'));
+}, []);
 
   const handleSubmit = async () => {
     if (!selectedUserId || points <= 0) {
@@ -26,7 +25,7 @@ const AddPointsPage: React.FC = () => {
       return;
     }
 
-    const response = await fetch(`http://localhost:5000/users/${selectedUserId}/points`, {
+    const response = await fetch(`http://localhost:5173/users/${selectedUserId}/points`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ points }),
@@ -47,6 +46,7 @@ const AddPointsPage: React.FC = () => {
       <select
         className="w-full p-2 border rounded mb-4"
         onChange={(e) => setSelectedUserId(Number(e.target.value))}
+        value={selectedUserId ?? ''}
       >
         <option value="">Select a user</option>
         {users.map(user => (
@@ -59,10 +59,11 @@ const AddPointsPage: React.FC = () => {
         value={points}
         onChange={(e) => setPoints(Number(e.target.value))}
         className="w-full p-2 border rounded mb-4"
+        min={1}
       />
       <button
         onClick={handleSubmit}
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        className="bg-primary-500 text-white px-4 py-2 rounded hover:bg-primary-600 transition"
       >
         Add Points
       </button>

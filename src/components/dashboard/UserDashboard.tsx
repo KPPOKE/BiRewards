@@ -163,7 +163,9 @@ const UserDashboard: React.FC = () => {
                           <h4 className="font-medium text-gray-900">{voucher.title}</h4>
                           <p className="text-sm text-gray-500 mt-1">{voucher.description}</p>
                         </div>
-                        <Badge variant="primary">{voucher.pointsCost} pts</Badge>
+                        <Badge className="bg-transparent text-gray-700 font-semibold shadow-none">
+                           {voucher.pointsCost} pts
+                            </Badge>
                       </div>
                       <div className="mt-3">
                         <Button

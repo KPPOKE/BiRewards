@@ -4,6 +4,7 @@ import { users } from '../utils/mockData';
 
 interface AuthContextType {
   currentUser: User | null;
+  setCurrentUser: React.Dispatch<React.SetStateAction<User | null>>; // <-- tambahkan ini
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
@@ -27,23 +28,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    // Simulate API request
     setIsLoading(true);
-    
     try {
-      // In a real app, this would be an API call
       const user = users.find(u => u.email === email);
-      
-      // Simulate a delay
       await new Promise(resolve => setTimeout(resolve, 800));
-      
       if (user) {
         setCurrentUser(user);
         localStorage.setItem('currentUser', JSON.stringify(user));
         setIsLoading(false);
         return true;
       }
-      
       setIsLoading(false);
       return false;
     } catch (error) {
@@ -53,22 +47,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const register = async (name: string, email: string, password: string): Promise<boolean> => {
-    // Simulate API request
     setIsLoading(true);
-    
     try {
-      // In a real app, this would be an API call
       const existingUser = users.find(u => u.email === email);
-      
-      // Simulate a delay
       await new Promise(resolve => setTimeout(resolve, 800));
-      
       if (existingUser) {
         setIsLoading(false);
         return false;
       }
-      
-      // Create new user (in a real app, this would be saved to a database)
       const newUser: User = {
         id: `${users.length + 1}`,
         email,
@@ -77,10 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         points: 0,
         createdAt: new Date().toISOString(),
       };
-      
-      // In a real app, we would add the user to the database
       users.push(newUser);
-      
       setCurrentUser(newUser);
       localStorage.setItem('currentUser', JSON.stringify(newUser));
       setIsLoading(false);
@@ -100,6 +83,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider
       value={{
         currentUser,
+        setCurrentUser, // <-- tambahkan ini
         isAuthenticated: !!currentUser,
         isLoading,
         login,

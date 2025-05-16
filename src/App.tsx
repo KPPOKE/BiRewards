@@ -9,7 +9,8 @@ import RewardsPage from './components/rewards/RewardsPage';
 import TransactionsPage from './components/transactions/TransactionsPage';
 import AdminUsersPage from './components/admin/AdminUsersPage';
 import AdminRewardsPage from './components/admin/AdminRewardsPage';
-import AddPointsPage from './components/admin/Addpoinpage';
+import AddPointsPage from './components/admin/AddPointsPage';
+import UserProfilePage from './components/profile/UserProfilePage'; 
 import { Award } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -36,7 +37,7 @@ const AppContent: React.FC = () => {
 
     handleHashChange();
     window.addEventListener('hashchange', handleHashChange);
-    
+
     return () => {
       window.removeEventListener('hashchange', handleHashChange);
     };
@@ -81,13 +82,12 @@ const AppContent: React.FC = () => {
   // Determine which page to show based on active page and user role
   const renderPage = () => {
     const isAdmin = currentUser?.role === 'admin';
-    
-    
+
     // Redirect non-admin users trying to access admin pages
-    if (!isAdmin && (activePage.startsWith('admin/'))) {
+    if (!isAdmin && activePage.startsWith('admin/')) {
       return <UserDashboard />;
     }
-    
+
     switch (activePage) {
       case 'dashboard':
         return <UserDashboard />;
@@ -99,6 +99,11 @@ const AppContent: React.FC = () => {
         return isAdmin ? <AdminUsersPage /> : <UserDashboard />;
       case 'admin/rewards':
         return isAdmin ? <AdminRewardsPage /> : <UserDashboard />;
+      case 'admin/add-points':
+        return isAdmin ? <AddPointsPage /> : <UserDashboard />;
+      case 'profile':
+        return <UserProfilePage />;
+      default:
         return <UserDashboard />;
     }
   };

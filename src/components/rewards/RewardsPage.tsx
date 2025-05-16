@@ -61,7 +61,7 @@ if (points >= 1000) {
         <div className="mt-4 sm:mt-0 flex items-center">
           <div className="flex items-center">
             <Award className={`h-5 w-5 mr-2 ${tierColor}`} />
-<span className={`font-medium ${tierColor}`}>{points} points available</span>
+          <span className={`font-medium ${tierColor}`}>{points} points </span>
           </div>
         </div>
       </div>
@@ -82,12 +82,12 @@ if (points >= 1000) {
       )}
 
       {/* Points tier explanation */}
-      <Card className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
+      <Card className="bg-gradient-to-r from-primary-500 to-primary-700 text-white">
         <CardContent className="py-6">
           <div className="flex flex-col md:flex-row items-center justify-between">
             <div className="mb-4 md:mb-0">
               <h2 className="text-xl font-bold">Points & Tiers</h2>
-              <p className="mt-1 text-purple-100">Earn points with every purchase and unlock higher status tiers</p>
+              <p className="mt-1 text-primary-100">Earn points with every purchase and unlock higher status tiers</p>
             </div>
             <div className="flex space-x-4">
               <div className="text-center px-4 py-2 bg-white bg-opacity-20 rounded-lg">
@@ -142,7 +142,7 @@ const RewardCard: React.FC<RewardCardProps> = ({ voucher, canRedeem, onRedeem })
       <CardHeader>
         <div className="flex justify-between items-start">
           <CardTitle>{voucher.title}</CardTitle>
-          <Badge variant={canRedeem ? 'primary' : 'secondary'} size="lg">
+          <Badge className="bg-transparent text-gray-700 font-semibold shadow-none" size="lg">
             {voucher.pointsCost} pts
           </Badge>
         </div>

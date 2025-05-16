@@ -124,7 +124,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onLoginClick }) 
           Already have an account?{' '}
           <button
             onClick={onLoginClick}
-            className="text-purple-600 hover:text-purple-800 font-medium"
+            className="text-black hover:text-primary-500 font-medium"
             type="button"
           >
             Login
