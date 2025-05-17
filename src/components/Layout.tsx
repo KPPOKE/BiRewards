@@ -80,7 +80,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <div className="flex-shrink-0 flex items-center">
                 <span className="font-bold text-xl text-primary-600 flex items-center">
                   <Award className="mr-2" size={24} />
-                  BI Loyal
+                  Bi Rewards
                 </span>
               </div>
             </div>
@@ -235,7 +235,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <div className="flex-shrink-0 flex items-center px-4">
                   <span className="font-bold text-xl text-primary-600 flex items-center">
                     <Award className="mr-2" size={20} />
-                    BI Loyal
+                    Bi Rewards
                   </span>
                 </div>
                 <nav className="mt-5 px-2 space-y-1">

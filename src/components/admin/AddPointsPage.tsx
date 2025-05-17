@@ -13,11 +13,11 @@ const AddPointsPage: React.FC = () => {
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
-  fetch('http://localhost:5173/users') // Ganti URL sesuai backend
-    .then(res => res.json())
-    .then(data => setUsers(data))
-    .catch(() => setMessage('Failed to fetch users.'));
-}, []);
+    fetch('http://localhost:5000/users')
+      .then(res => res.json())
+      .then(data => setUsers(data))
+      .catch(() => setMessage('Failed to fetch users.'));
+  }, []);
 
   const handleSubmit = async () => {
     if (!selectedUserId || points <= 0) {
@@ -25,7 +25,7 @@ const AddPointsPage: React.FC = () => {
       return;
     }
 
-    const response = await fetch(`http://localhost:5173/users/${selectedUserId}/points`, {
+    const response = await fetch(`http://localhost:5000/users/${selectedUserId}/points`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ points }),
@@ -38,6 +38,10 @@ const AddPointsPage: React.FC = () => {
       setMessage('Failed to add points.');
     }
   };
+
+  if (users.length === 0) {
+    return <p className="text-center">Loading users...</p>;
+  }
 
   return (
     <div className="p-6 bg-white rounded-xl shadow max-w-xl mx-auto mt-10">

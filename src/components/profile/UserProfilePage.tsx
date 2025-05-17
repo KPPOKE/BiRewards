@@ -25,6 +25,7 @@ const UserProfilePage: React.FC = () => {
     }
   };
 
+  
   if (!currentUser) return null;
 
   return (
