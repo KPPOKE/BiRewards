@@ -53,7 +53,7 @@ const AppContent: React.FC = () => {
               <Award className="h-12 w-12 text-primary-600" />
             </div>
           </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">BI Loyal</h2>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Bi Rewards</h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             {isRegistering
               ? "Create an account to start earning rewards"
