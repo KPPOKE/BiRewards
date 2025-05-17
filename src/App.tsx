@@ -10,7 +10,12 @@ import TransactionsPage from './components/transactions/TransactionsPage';
 import AdminUsersPage from './components/admin/AdminUsersPage';
 import AdminRewardsPage from './components/admin/AdminRewardsPage';
 import AddPointsPage from './components/admin/AddPointsPage';
-import UserProfilePage from './components/profile/UserProfilePage'; 
+import UserProfilePage from './components/profile/UserProfilePage';
+import OwnerDashboard from './components/dashboard/OwnerDashboard';
+import ManagerDashboard from './components/dashboard/ManagerDashboard';
+import CashierDashboard from './components/dashboard/CashierDashboard';
+import WaiterDashboard from './components/dashboard/WaiterDashboard';
+
 import { Award } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -28,7 +33,6 @@ const AppContent: React.FC = () => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [activePage, setActivePage] = useState('dashboard');
 
-  // Handle hash-based routing
   React.useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '') || 'dashboard';
@@ -37,10 +41,7 @@ const AppContent: React.FC = () => {
 
     handleHashChange();
     window.addEventListener('hashchange', handleHashChange);
-
-    return () => {
-      window.removeEventListener('hashchange', handleHashChange);
-    };
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
   if (!isAuthenticated) {
@@ -52,9 +53,7 @@ const AppContent: React.FC = () => {
               <Award className="h-12 w-12 text-primary-600" />
             </div>
           </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            BI Loyal
-          </h2>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">BI Loyal</h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             {isRegistering
               ? "Create an account to start earning rewards"
@@ -79,32 +78,41 @@ const AppContent: React.FC = () => {
     );
   }
 
-  // Determine which page to show based on active page and user role
+  const role = currentUser?.role;
+
   const renderPage = () => {
-    const isAdmin = currentUser?.role === 'admin';
-
-    // Redirect non-admin users trying to access admin pages
-    if (!isAdmin && activePage.startsWith('admin/')) {
-      return <UserDashboard />;
-    }
-
-    switch (activePage) {
-      case 'dashboard':
-        return <UserDashboard />;
-      case 'rewards':
-        return <RewardsPage />;
-      case 'transactions':
-        return <TransactionsPage />;
-      case 'admin/users':
-        return isAdmin ? <AdminUsersPage /> : <UserDashboard />;
-      case 'admin/rewards':
-        return isAdmin ? <AdminRewardsPage /> : <UserDashboard />;
-      case 'admin/add-points':
-        return isAdmin ? <AddPointsPage /> : <UserDashboard />;
-      case 'profile':
-        return <UserProfilePage />;
+    switch (role) {
+      case 'owner':
+        return <OwnerDashboard />;
+      case 'manager':
+        return <ManagerDashboard />;
+      case 'cashier':
+        return <CashierDashboard />;
+      case 'waiter':
+        return <WaiterDashboard />;
+      case 'admin':
+        switch (activePage) {
+          case 'admin/users':
+            return <AdminUsersPage />;
+          case 'admin/rewards':
+            return <AdminRewardsPage />;
+          case 'admin/add-points':
+            return <AddPointsPage />;
+          default:
+            return <UserDashboard />;
+        }
+      case 'user':
       default:
-        return <UserDashboard />;
+        switch (activePage) {
+          case 'rewards':
+            return <RewardsPage />;
+          case 'transactions':
+            return <TransactionsPage />;
+          case 'profile':
+            return <UserProfilePage />;
+          default:
+            return <UserDashboard />;
+        }
     }
   };
 

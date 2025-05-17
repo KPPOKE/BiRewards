@@ -1,6 +1,6 @@
 import { User, Voucher, Transaction } from '../types';
 
-// Mock users
+// Data user
 export const users: User[] = [
   {
     id: '1',
@@ -26,108 +26,123 @@ export const users: User[] = [
     points: 350,
     createdAt: '2023-06-20T14:45:00Z',
   },
-];
-
-// Mock vouchers
-export const vouchers: Voucher[] = [
-  {
-    id: '1',
-    title: '10% Off Next Purchase',
-    description: 'Get 10% off on your next purchase. Valid for 30 days after redemption.',
-    pointsCost: 200,
-    expiryDays: 30,
-    isActive: true,
-  },
-  {
-    id: '2',
-    title: 'Free Shipping',
-    description: 'Free shipping on your next order. Valid for 14 days after redemption.',
-    pointsCost: 150,
-    expiryDays: 14,
-    isActive: true,
-  },
-  {
-    id: '3',
-    title: 'IDR25.000 Gift Card',
-    description: 'Redeem for a IDR25.000 gift card. Valid for 60 days after redemption.',
-    pointsCost: 500,
-    expiryDays: 60,
-    isActive: true,
-  },
   {
     id: '4',
-    title: 'Premium Membership (1 Month)',
-    description: 'Get premium membership benefits for 1 month.',
-    pointsCost: 800,
-    expiryDays: 30,
-    isActive: true,
+    name: 'Owner Boss',
+    email: 'owner@example.com',
+    role: 'owner',
+    points: 1000,
+    createdAt: new Date().toISOString()
   },
   {
     id: '5',
-    title: 'Exclusive Product Early Access',
-    description: 'Get our new food product.',
-    pointsCost: 1000,
-    expiryDays: 90,
-    isActive: true,
-  },
-];
-
-// Mock transactions
-export const transactions: Transaction[] = [
-  {
-    id: '1',
-    userId: '1',
-    type: 'purchase',
-    amount: 150.00,
-    pointsEarned: 150,
-    createdAt: '2023-08-10T09:23:15Z',
-    description: 'Purchase from Gojek',
-  },
-  {
-    id: '2',
-    userId: '1',
-    type: 'redemption',
-    amount: 0,
-    pointsSpent: 200,
-    voucherId: '1',
-    createdAt: '2023-08-15T14:30:45Z',
-    description: 'Redeemed 10% Off Next Purchase voucher',
-  },
-  {
-    id: '3',
-    userId: '1',
-    type: 'purchase',
-    amount: 85.50,
-    pointsEarned: 85,
-    createdAt: '2024-09-02T11:45:22Z',
-    description: 'In-store purchase',
-  },
-  {
-    id: '4',
-    userId: '1',
-    type: 'purchase',
-    amount: 215.75,
-    pointsEarned: 215,
-    createdAt: '2024-09-20T16:12:08Z',
-    description: 'purchase from gojek',
-  },
-  {
-    id: '5',
-    userId: '3',
-    type: 'purchase',
-    amount: 350.00,
-    pointsEarned: 350,
-    createdAt: '2024-08-05T10:15:45Z',
-    description: 'Purchase from home',
+    name: 'Manager Guy',
+    email: 'manager@example.com',
+    role: 'manager',
+    points: 0,
+    createdAt: new Date().toISOString()
   },
   {
     id: '6',
+    name: 'Kasir Man',
+    email: 'cashier@example.com',
+    role: 'cashier',
+    points: 0,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '7',
+    name: 'Waiter Bro',
+    email: 'waiter@example.com',
+    role: 'waiter',
+    points: 0,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '8',
+    name: 'Admin Woman',
+    email: 'admin2@example.com',
+    role: 'admin',
+    points: 0,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '9',
+    name: 'Pelanggan',
+    email: 'user@example.com',
+    role: 'user',
+    points: 300,
+    createdAt: new Date().toISOString()
+  }
+];
+
+// Data voucher
+export const vouchers: Voucher[] = [
+  {
+    id: '1',
+    title: 'Free Coffee',
+    description: 'Get a free coffee with this voucher.',
+    pointsCost: 100,
+    expiryDays: 30,
+    isActive: true,
+  },
+  {
+    id: '2',
+    title: 'Discount 10%',
+    description: '10% off on your next purchase.',
+    pointsCost: 200,
+    expiryDays: 60,
+    isActive: true,
+  },
+];
+
+// ...existing code...
+
+export const transactions: Transaction[] = [
+  {
+    id: 't1',
+    userId: '1',
+    type: 'earning',
+    amount: 50000,
+    pointsEarned: 50,
+    createdAt: '2023-05-15T11:00:00Z',
+    description: 'Pembelian kopi di BI Cafe',
+  },
+  {
+    id: 't2',
+    userId: '1',
+    type: 'redemption',
+    amount: 0,
+    pointsSpent: 100,
+    voucherId: '1',
+    createdAt: '2023-05-20T09:30:00Z',
+    description: 'Redeem voucher Free Coffee',
+  },
+  {
+    id: 't3',
+    userId: '2',
+    type: 'earning',
+    amount: 100000,
+    pointsEarned: 100,
+    createdAt: '2023-06-01T14:20:00Z',
+    description: 'Pembelian makanan di BI Cafe',
+  },
+  {
+    id: 't4',
+    userId: '3',
+    type: 'purchase',
+    amount: 75000,
+    createdAt: '2023-06-21T10:00:00Z',
+    description: 'Pembelian snack',
+  },
+  {
+    id: 't5',
     userId: '3',
     type: 'redemption',
     amount: 0,
-    pointsSpent: 150,
+    pointsSpent: 200,
     voucherId: '2',
-    createdAt: '2024-09-10T13:20:30Z',
-    description: 'Redeemed Free Ice Tea',
+    createdAt: '2023-06-22T12:00:00Z',
+    description: 'Redeem voucher Discount 10%',
   },
 ];

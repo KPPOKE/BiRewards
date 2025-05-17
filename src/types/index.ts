@@ -1,11 +1,11 @@
-export type User = {
+export interface User {
   id: string;
-  email: string;
   name: string;
-  role: 'user' | 'admin';
+  email: string;
+  role: 'user' | 'admin' | 'owner' | 'manager' | 'cashier' | 'waiter';
   points: number;
   createdAt: string;
-};
+}
 
 export type Voucher = {
   id: string;

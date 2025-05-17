@@ -28,4 +28,19 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+// Tambah points ke user
+router.post('/:id/points', async (req, res) => {
+  const { points } = req.body;
+  const { id } = req.params;
+  try {
+    const result = await pool.query(
+      'UPDATE users SET points = points + $1 WHERE id = $2 RETURNING *',
+      [points, id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to add points' });
+  }
+});
+
 export default router;

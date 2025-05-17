@@ -46,33 +46,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (name: string, email: string, password: string): Promise<boolean> => {
-    setIsLoading(true);
-    try {
-      const existingUser = users.find(u => u.email === email);
-      await new Promise(resolve => setTimeout(resolve, 800));
-      if (existingUser) {
-        setIsLoading(false);
-        return false;
-      }
-      const newUser: User = {
-        id: `${users.length + 1}`,
-        email,
-        name,
-        role: 'user',
-        points: 0,
-        createdAt: new Date().toISOString(),
-      };
-      users.push(newUser);
-      setCurrentUser(newUser);
-      localStorage.setItem('currentUser', JSON.stringify(newUser));
-      setIsLoading(false);
-      return true;
-    } catch (error) {
+ // ...existing code...
+const register = async (name: string, email: string, password: string): Promise<boolean> => {
+  setIsLoading(true);
+  try {
+    const existingUser = users.find(u => u.email === email);
+    await new Promise(resolve => setTimeout(resolve, 800));
+    if (existingUser) {
       setIsLoading(false);
       return false;
     }
-  };
+    const newUser: User = {
+      id: `${users.length + 1}`,
+      email,
+      name,
+      role: 'user',
+      points: 0,
+      createdAt: new Date().toISOString(),
+    };
+    // users.push(newUser); // HAPUS BARIS INI
+    setCurrentUser(newUser);
+    localStorage.setItem('currentUser', JSON.stringify(newUser));
+    setIsLoading(false);
+    return true;
+  } catch (error) {
+    setIsLoading(false);
+    return false;
+  }
+};
+// ...existing code...
 
   const logout = () => {
     setCurrentUser(null);

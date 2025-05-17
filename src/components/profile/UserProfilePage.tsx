@@ -9,7 +9,7 @@ const UserProfilePage: React.FC = () => {
   const [message, setMessage] = useState('');
 
   const handleUpdate = async () => {
-    const response = await fetch(`http://localhost:5173/users/${currentUser?.id}`, {
+    const response = await fetch(`http://localhost:5000/users/${currentUser?.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email }),
