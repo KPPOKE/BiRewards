@@ -1,10 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '../types';
-import { users } from '../utils/mockData';
 
 interface AuthContextType {
   currentUser: User | null;
-  setCurrentUser: React.Dispatch<React.SetStateAction<User | null>>; // <-- tambahkan ini
+  setCurrentUser: React.Dispatch<React.SetStateAction<User | null>>;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
@@ -19,7 +18,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is logged in from localStorage
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
       setCurrentUser(JSON.parse(storedUser));
@@ -30,51 +28,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      const user = users.find(u => u.email === email);
-      await new Promise(resolve => setTimeout(resolve, 800));
-      if (user) {
-        setCurrentUser(user);
-        localStorage.setItem('currentUser', JSON.stringify(user));
+      const res = await fetch('http://localhost:5000/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
         setIsLoading(false);
-        return true;
+        return false;
       }
+
+      const user: User = await res.json();
+
+      setCurrentUser(user);
+      localStorage.setItem('currentUser', JSON.stringify(user));
       setIsLoading(false);
-      return false;
+      return true;
     } catch (error) {
       setIsLoading(false);
       return false;
     }
   };
 
- // ...existing code...
-const register = async (name: string, email: string, password: string): Promise<boolean> => {
-  setIsLoading(true);
-  try {
-    const existingUser = users.find(u => u.email === email);
-    await new Promise(resolve => setTimeout(resolve, 800));
-    if (existingUser) {
+  const register = async (name: string, email: string, password: string): Promise<boolean> => {
+    setIsLoading(true);
+    try {
+      const res = await fetch('http://localhost:5000/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      if (!res.ok) {
+        setIsLoading(false);
+        return false;
+      }
+
+      const user: User = await res.json();
+
+      setCurrentUser(user);
+      localStorage.setItem('currentUser', JSON.stringify(user));
+      setIsLoading(false);
+      return true;
+    } catch (error) {
       setIsLoading(false);
       return false;
     }
-    const newUser: User = {
-      id: `${users.length + 1}`,
-      email,
-      name,
-      role: 'user',
-      points: 0,
-      createdAt: new Date().toISOString(),
-    };
-    // users.push(newUser); // HAPUS BARIS INI
-    setCurrentUser(newUser);
-    localStorage.setItem('currentUser', JSON.stringify(newUser));
-    setIsLoading(false);
-    return true;
-  } catch (error) {
-    setIsLoading(false);
-    return false;
-  }
-};
-// ...existing code...
+  };
 
   const logout = () => {
     setCurrentUser(null);
@@ -85,7 +86,7 @@ const register = async (name: string, email: string, password: string): Promise<
     <AuthContext.Provider
       value={{
         currentUser,
-        setCurrentUser, // <-- tambahkan ini
+        setCurrentUser,
         isAuthenticated: !!currentUser,
         isLoading,
         login,

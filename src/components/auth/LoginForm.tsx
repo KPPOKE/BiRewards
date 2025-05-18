@@ -27,7 +27,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onRegisterClick }) => 
 
     try {
       const success = await login(email, password);
-      
+
       if (success) {
         if (onSuccess) onSuccess();
       } else {
@@ -50,7 +50,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onRegisterClick }) => 
               {error}
             </div>
           )}
-          
+
           <Input
             label="Email"
             type="email"
@@ -61,7 +61,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onRegisterClick }) => 
             leftIcon={<Mail size={18} />}
             required
           />
-          
+
           <Input
             label="Password"
             type="password"
@@ -72,10 +72,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onRegisterClick }) => 
             leftIcon={<Lock size={18} />}
             required
           />
-          
-          <Button 
-            type="submit" 
-            fullWidth 
+
+          <Button
+            type="submit"
+            fullWidth
             isLoading={isLoading}
             leftIcon={<LogIn size={18} />}
           >
