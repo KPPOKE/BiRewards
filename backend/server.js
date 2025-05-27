@@ -6,6 +6,8 @@ import userRoutes from './routes/users.js';
 import rewardRoutes from './routes/rewards.js';
 import transactionRoutes from './routes/transactions.js';
 import customerRoutes from './routes/customers.js';
+import pointsRoutes from './routes/pointsRoutes.js';
+import directPointsRoutes from './routes/directPoints.js';
 import errorHandler from './middleware/errorHandler.js';
 // Rate limiter removed
 import swaggerUi from 'swagger-ui-express';
@@ -96,6 +98,8 @@ app.use('/api/support-tickets', (req, res, next) => {
 app.use('/api', userRoutes);
 app.use('/api', rewardRoutes);
 app.use('/api', transactionRoutes);
+app.use('/api', pointsRoutes); // Register the points routes
+app.use('/api', directPointsRoutes); // Register the direct points routes
 app.use('/api-docs', apiDocsRoutes);
 app.use('/api/support-tickets', supportTicketRoutes);
 app.use('/api/customers', customerRoutes);

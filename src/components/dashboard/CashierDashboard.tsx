@@ -78,29 +78,54 @@ const CashierDashboard: React.FC = () => {
   const handleAddPoints = async () => {
     if (!foundUser) return;
     setAddPointsMsg(null);
-    const amount = Math.floor(Number(purchase) / 10000); // 1 point per Rp10,000
-    if (amount <= 0) {
-      setAddPointsMsg('Purchase too low for points.');
+    
+    // Validate purchase amount
+    const purchaseAmount = Number(purchase);
+    if (isNaN(purchaseAmount) || purchaseAmount <= 0) {
+      setAddPointsMsg('Please enter a valid purchase amount.');
       return;
     }
-    // TODO: Replace with real API after backend
+    
+    // Calculate points - 1 point per Rp10,000
+    const amount = Math.floor(purchaseAmount / 10000);
+    if (amount <= 0) {
+      setAddPointsMsg('Purchase too low for points. Minimum Rp10,000 required.');
+      return;
+    }
+    
     try {
-      const res = await fetch(`${API_URL}/transactions/users/${foundUser.id}/points`, {
+      // Use the direct points API endpoint that matches the database structure
+      const res = await fetch(`${API_URL}/add-points/${foundUser.id}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
+        headers: { 
+          'Content-Type': 'application/json', 
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}) 
+        },
         credentials: 'include',
-        body: JSON.stringify({ amount, description: `Purchase Rp${purchase}` }),
+        body: JSON.stringify({ 
+          amount, 
+          description: `Purchase Rp${purchaseAmount.toLocaleString()}` 
+        }),
       });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error('API error:', errorData);
+        setAddPointsMsg(`Failed to add points: ${errorData.error?.message || 'Server error'}`);
+        return;
+      }
+      
       const data = await res.json();
       if (data.success) {
         setAddPointsMsg(`Points added! New balance: ${data.data.newPoints}`);
         setFoundUser({ ...foundUser, points: data.data.newPoints });
         setPurchase('');
       } else {
-        setAddPointsMsg('Failed to add points.');
+        setAddPointsMsg(`Failed to add points: ${data.error?.message || 'Unknown error'}`);
       }
     } catch (err) {
-      setAddPointsMsg('Failed to add points.');
+      console.error('Error adding points:', err);
+      setAddPointsMsg('Failed to add points. Network or server error.');
     }
   };
 

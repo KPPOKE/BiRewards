@@ -78,18 +78,23 @@ const WaiterDashboard: React.FC = () => {
   const handleAddPoints = async () => {
     if (!foundUser) return;
     setAddPointsMsg(null);
-    const amount = Math.floor(Number(purchase) / 10000); // 1 point per Rp10,000
+    const purchaseAmount = Number(purchase);
+    const amount = Math.floor(purchaseAmount / 10000); // 1 point per Rp10,000
     if (amount <= 0) {
       setAddPointsMsg('Purchase too low for points.');
       return;
     }
     // TODO: Replace with real API after backend
     try {
-      const res = await fetch(`${API_URL}/transactions/users/${foundUser.id}/points`, {
+      const res = await fetch(`${API_URL}/users/${foundUser.id}/points`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
         credentials: 'include',
-        body: JSON.stringify({ amount, description: `Purchase Rp${purchase}` }),
+        body: JSON.stringify({ 
+          amount, 
+          description: `Purchase Rp${purchase}`,
+          purchaseAmount: purchaseAmount
+        }),
       });
       const data = await res.json();
       if (data.success) {
@@ -100,6 +105,7 @@ const WaiterDashboard: React.FC = () => {
         setAddPointsMsg('Failed to add points.');
       }
     } catch (err) {
+      console.error('Error adding points:', err);
       setAddPointsMsg('Failed to add points.');
     }
   };

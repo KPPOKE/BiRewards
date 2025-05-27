@@ -24,8 +24,8 @@ router.get('/users/:userId/transactions/stats', canAccessOwnOrAdmin, getTransact
 // Get all transactions (admin/manager)
 router.get('/all', authorize('admin', 'manager'), getAllTransactions);
 
-// Add points (admin/manager/cashier only)
-router.post('/users/:userId/points', authorize('admin', 'manager', 'cashier'), validate(schemas.transaction.addPoints), auditLog('points_changed'), addPoints);
+// Add points (admin/manager/cashier/waiter)
+router.post('/users/:userId/points', authorize('admin', 'manager', 'cashier', 'waiter'), validate(schemas.transaction.addPoints), auditLog('points_changed'), addPoints);
 
 // Redeem reward
 router.post('/users/:userId/redeem', validate(schemas.transaction.redeemReward), auditLog('reward_redeemed'), redeemReward);

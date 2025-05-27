@@ -43,44 +43,98 @@ export const getUserTransactions = async (req, res, next) => {
 // Add points to user
 export const addPoints = async (req, res, next) => {
   const { userId } = req.params;
-  const { amount, description } = req.body;
+  const { amount, description, purchaseAmount } = req.body;
 
+  // Validate input
+  if (!amount || isNaN(amount) || amount <= 0) {
+    return next(new AppError('Invalid points amount. Must be a positive number.', 400));
+  }
+
+  // Convert amount to integer to ensure we're working with whole points
+  const pointsToAdd = Math.floor(Number(amount));
+  
+  // Extract purchase amount from description if not provided directly
+  let actualPurchaseAmount = purchaseAmount;
+  if (!actualPurchaseAmount && description) {
+    const match = description.match(/Rp(\d+)/);
+    if (match && match[1]) {
+      actualPurchaseAmount = parseInt(match[1], 10);
+    }
+  }
+
+  let client;
   try {
+    // Get client from pool
+    client = await pool.connect();
+    
     // Start transaction
-    await pool.query('BEGIN');
+    await client.query('BEGIN');
 
-    // Add points to user
-    const userResult = await pool.query(
-      'UPDATE users SET points = points + $1 WHERE id = $2 RETURNING points',
-      [amount, userId]
+    // Check if user exists first
+    const userCheckResult = await client.query(
+      'SELECT id, points FROM users WHERE id = $1',
+      [userId]
     );
 
-    if (userResult.rows.length === 0) {
-      await pool.query('ROLLBACK');
+    if (userCheckResult.rows.length === 0) {
+      await client.query('ROLLBACK');
       return next(new AppError('User not found', 404));
     }
 
-    // Create transaction record
-    const transactionResult = await pool.query(
-      `INSERT INTO transactions 
-       (user_id, type, amount, description) 
-       VALUES ($1, 'points_added', $2, $3) 
-       RETURNING *`,
-      [userId, amount, description]
+    // Add points to user
+    const userResult = await client.query(
+      'UPDATE users SET points = points + $1 WHERE id = $2 RETURNING points',
+      [pointsToAdd, userId]
     );
 
-    await pool.query('COMMIT');
+    // Try to create transaction record with purchase_amount if available
+    let transactionResult;
+    try {
+      transactionResult = await client.query(
+        `INSERT INTO transactions 
+         (user_id, type, amount, description, purchase_amount) 
+         VALUES ($1, 'points_added', $2, $3, $4) 
+         RETURNING *`,
+        [userId, pointsToAdd, description, actualPurchaseAmount || null]
+      );
+    } catch (insertError) {
+      // If the insert fails due to missing column, fall back to the original schema
+      console.error('Error inserting with purchase_amount, falling back:', insertError.message);
+      transactionResult = await client.query(
+        `INSERT INTO transactions 
+         (user_id, type, amount, description) 
+         VALUES ($1, 'points_added', $2, $3) 
+         RETURNING *`,
+        [userId, pointsToAdd, description]
+      );
+    }
 
+    // Commit the transaction
+    await client.query('COMMIT');
+
+    // Return success response
     res.json({
       success: true,
       data: {
         transaction: transactionResult.rows[0],
-        newPoints: userResult.rows[0].points
+        newPoints: userResult.rows[0].points,
+        purchaseAmount: actualPurchaseAmount
       }
     });
   } catch (error) {
-    await pool.query('ROLLBACK');
-    next(new AppError('Error adding points', 500));
+    console.error('Error in addPoints:', error);
+    // Rollback transaction on error
+    if (client) {
+      await client.query('ROLLBACK').catch(err => {
+        console.error('Error during rollback:', err);
+      });
+    }
+    next(new AppError(`Error adding points: ${error.message}`, 500));
+  } finally {
+    // Release client back to pool
+    if (client) {
+      client.release();
+    }
   }
 };
 

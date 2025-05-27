@@ -20,13 +20,14 @@ export type Voucher = {
 export type Transaction = {
   id: string;
   userId: string;
-  type: 'purchase' | 'earning' | 'redemption';
+  type: 'purchase' | 'earning' | 'redemption' | 'points_added' | 'reward_redeemed';
   amount: number;
   pointsEarned?: number;
   pointsSpent?: number;
   voucherId?: string;
   createdAt: string;
   description: string;
+  purchaseAmount?: number;
 };
 
 export type Notification = {

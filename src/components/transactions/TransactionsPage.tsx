@@ -10,11 +10,9 @@ import {
   Search, 
   FilterX,
   Calendar,
-  ArrowDownUp,
   ArrowUp,
   ArrowDown,
 } from 'lucide-react';
-import { Transaction } from '../../types';
 import Button from '../ui/Button';
 import { formatCurrency } from '../../utils/formatCurrency';
 
@@ -185,10 +183,10 @@ const TransactionsPage: React.FC = () => {
                           : '—'}
                       </td>
                       <td className="py-3 px-4 text-sm text-right font-medium">
-                        {transaction.type === 'purchase' && transaction.pointsEarned && (
-                          <span className="text-green-600">+{transaction.pointsEarned}</span>
+                        {(transaction.type === 'purchase' || transaction.type === 'points_added') && (
+                          <span className="text-green-600">+{transaction.pointsEarned || transaction.amount}</span>
                         )}
-                        {transaction.type === 'redemption' && transaction.pointsSpent && (
+                        {(transaction.type === 'redemption' || transaction.type === 'reward_redeemed') && transaction.pointsSpent && (
                           <span className="text-amber-600">-{transaction.pointsSpent}</span>
                         )}
                       </td>
