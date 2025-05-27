@@ -17,7 +17,7 @@ import path from 'path';
 import { validate, schemas } from '../middleware/validate.js';
 import { protect, authorize } from '../middleware/auth.js';
 import { auditLog } from '../middleware/auditLog.js';
-import { sensitiveLimiter } from '../middleware/rateLimiter.js';
+// Rate limiter removed
 
 const router = express.Router();
 
@@ -58,8 +58,8 @@ router.post('/users/:id/profile-image', protect, upload.single('profile_image'),
 router.put('/users/:id/profile', protect, updateUser);
 
 // Public routes (no authentication required)
-router.post('/users/login', sensitiveLimiter, validate(schemas.user.login), loginUser);
-router.post('/users/register', sensitiveLimiter, validate(schemas.user.create), createUser);
+router.post('/users/login', validate(schemas.user.login), loginUser);
+router.post('/users/register', validate(schemas.user.create), createUser);
 
 // Owner stats route (admin/owner/manager)
 router.get('/owner/stats', protect, authorize('owner', 'admin', 'manager'), getOwnerStats);

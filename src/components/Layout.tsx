@@ -11,7 +11,8 @@ import {
   X, 
   Award, 
   ChevronDown,
-  Bell
+  Bell,
+  MessageCircle
 } from 'lucide-react';
 import {
   canViewStats,
@@ -21,7 +22,6 @@ import {
   canManagePoints,
   canAddPoints,
   canViewPromotions,
-  isAdmin,
   UserRole
 } from '../utils/roleAccess';
 
@@ -86,6 +86,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: 'Rewards', href: 'rewards', icon: Gift, show: canManageRewards(userRole) || userRole === 'user' },
     { name: 'Transactions', href: 'transactions', icon: Clock, show: canManagePoints(userRole) || userRole === 'user' },
     { name: 'Support Tickets', href: 'support-tickets', icon: Bell, show: userRole === 'user' },
+    { name: 'Support Center', href: 'admin/support', icon: MessageCircle, show: userRole === 'admin' || userRole === 'manager' },
     { name: 'Manage Users', href: 'admin/users', icon: Users, show: canManageUsers(userRole) },
     { name: 'Manage Rewards', href: 'admin/rewards', icon: Award, show: canManageRewards(userRole) },
     { name: 'Add Points', href: 'admin/add-points', icon: Award, show: canAddPoints(userRole) || canManagePoints(userRole) },
@@ -98,17 +99,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   if (userRole === 'owner') {
     navigation = navigation.filter(item => item.name === 'Dashboard');
   }
-  // If admin, only show Manage Users, Manage Rewards, Add Points
+  // If admin, show admin-specific navigation items
   else if (userRole === 'admin') {
-    navigation = navigation.filter(item => ['Manage Users', 'Manage Rewards', 'Add Points'].includes(item.name));
+    navigation = navigation.filter(item => ['Manage Users', 'Manage Rewards', 'Add Points', 'Support Center'].includes(item.name));
     // Set default route to Manage Users on first load
     if (window.location.hash === '' || window.location.hash === '#dashboard') {
       window.location.hash = 'admin/users';
     }
   }
-  // If manager, only show Dashboard
+  // If manager, show manager-specific navigation items
   else if (userRole === 'manager') {
-    navigation = navigation.filter(item => item.name === 'Dashboard');
+    navigation = navigation.filter(item => ['Dashboard', 'Support Center'].includes(item.name));
   }
   // If cashier, remove Add Points from navigation
   else if (userRole === 'cashier') {
@@ -357,17 +358,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   );
 };
 
-// Badge component for points (optional)
-interface BadgeProps {
-  points: number;
-  className?: string;
-}
-const Badge: React.FC<BadgeProps> = ({ points, className }) => {
-  return (
-    <span className={`bg-primary-100 text-primary-700 rounded-full px-2 py-0.5 font-semibold text-xs ${className}`}>
-      {points} pts
-    </span>
-  );
-};
+// Badge component removed as it's not being used
 
 export default Layout;

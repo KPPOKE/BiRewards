@@ -16,6 +16,7 @@ import ManagerDashboard from './components/dashboard/ManagerDashboard';
 import CashierDashboard from './components/dashboard/CashierDashboard';
 import WaiterDashboard from './components/dashboard/WaiterDashboard';
 import SupportTicketsPage from './pages/SupportTicketsPage';
+import AdminSupportPage from './pages/AdminSupportPage';
 
 import { Award } from 'lucide-react';
 
@@ -86,7 +87,12 @@ const AppContent: React.FC = () => {
       case 'owner':
         return <OwnerDashboard />;
       case 'manager':
-        return <ManagerDashboard />;
+        switch (activePage) {
+          case 'admin/support':
+            return <AdminSupportPage />;
+          default:
+            return <ManagerDashboard />;
+        };
       case 'cashier':
         return <CashierDashboard />;
       case 'waiter':
@@ -99,6 +105,8 @@ const AppContent: React.FC = () => {
             return <AdminRewardsPage />;
           case 'admin/add-points':
             return <AddPointsPage />;
+          case 'admin/support':
+            return <AdminSupportPage />;
           default:
             return <UserDashboard />;
         }

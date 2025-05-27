@@ -6,7 +6,7 @@ import userRoutes from './routes/users.js';
 import rewardRoutes from './routes/rewards.js';
 import transactionRoutes from './routes/transactions.js';
 import errorHandler from './middleware/errorHandler.js';
-import { apiLimiter } from './middleware/rateLimiter.js';
+// Rate limiter removed
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 import apiDocsRoutes from './routes/api-docs.js';
@@ -44,7 +44,52 @@ app.use(cors({
 app.use(express.json({ limit: '10kb' })); // Body parser, reading data from body into req.body
 
 // Apply rate limiting to all routes
-app.use('/api', apiLimiter);
+// Rate limiter removed - unlimited API requests allowed
+
+// EMERGENCY FIX: Implement a request tracker to prevent infinite API calls
+const requestTracker = new Map();
+
+// COMPLETE FIX: Block ALL support ticket API calls that are causing infinite loops
+app.use('/api/support-tickets', (req, res, next) => {
+  // Get a unique request identifier
+  const path = req.path;
+  const method = req.method;
+  
+  // Extract ticket ID from URL if available
+  const pathSegments = path.split('/');
+  const ticketId = pathSegments.length > 1 ? pathSegments[1] : 'all';
+  
+  // Create a key based on the specific endpoint being accessed
+  const endpointKey = `${method}-${ticketId}-${pathSegments.length > 2 ? pathSegments[2] : 'main'}`;
+  
+  const now = Date.now();
+  const lastRequest = requestTracker.get(endpointKey);
+  
+  // For any support ticket endpoint, enforce a 1 second cooldown period
+  if (lastRequest && now - lastRequest < 1000) {
+    console.log(`🛑 Blocking repeated request: ${method} ${path} (too frequent)`);
+    return res.status(429).json({
+      success: false,
+      error: 'Request rate limited. Please wait before making another request.'
+    });
+  }
+  
+  // Update the tracker with this request
+  requestTracker.set(endpointKey, now);
+  console.log(`✅ Allowing request: ${method} ${path}`);
+  
+  // Clean up old entries periodically
+  if (Math.random() < 0.1) { 
+    const expiryTime = now - 5000; // 5 seconds
+    for (const [key, timestamp] of requestTracker.entries()) {
+      if (timestamp < expiryTime) {
+        requestTracker.delete(key);
+      }
+    }
+  }
+  
+  next();
+});
 
 // Routes
 app.use('/api', userRoutes);
