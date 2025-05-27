@@ -1,0 +1,260 @@
+openapi: 3.0.0
+info:
+  title: Loyalty Rewards API
+  version: 1.0.0
+  description: API for managing loyalty rewards system
+servers:
+  - url: http://localhost:5000/api
+paths:
+  /users:
+    get:
+      summary: Get all users
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+          description: Page number
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          description: Number of users per page
+        - in: query
+          name: role
+          schema:
+            type: string
+          description: Filter by role
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search by name or email
+      responses:
+        '200':
+          description: A list of users
+    post:
+      summary: Create a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                role:
+                  type: string
+      responses:
+        '201':
+          description: User created
+  /users/login:
+    post:
+      summary: User login
+      responses:
+        '200':
+          description: Login successful
+  /users/{id}:
+    get:
+      summary: Get user by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User found
+    put:
+      summary: Update a user
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                role:
+                  type: string
+                points:
+                  type: integer
+      responses:
+        '200':
+          description: User updated
+    delete:
+      summary: Delete a user
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: User deleted
+  /rewards:
+    get:
+      summary: Get all rewards
+      responses:
+        '200':
+          description: A list of rewards
+    post:
+      summary: Create a new reward
+      responses:
+        '201':
+          description: Reward created
+  /rewards/{id}:
+    get:
+      summary: Get reward by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Reward found
+    put:
+      summary: Update reward by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Reward updated
+    delete:
+      summary: Delete reward by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Reward deleted
+  /transactions:
+    get:
+      summary: Get all transactions
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+          description: Page number
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          description: Number of transactions per page
+        - in: query
+          name: user_id
+          schema:
+            type: integer
+          description: Filter by user ID
+        - in: query
+          name: transaction_type
+          schema:
+            type: string
+          description: Filter by transaction type
+      responses:
+        '200':
+          description: A list of transactions
+  /transactions/add-points:
+    post:
+      summary: Add points to a user
+      responses:
+        '201':
+          description: Points added
+  /transactions/redeem:
+    post:
+      summary: Redeem a reward
+      responses:
+        '201':
+          description: Reward redeemed
+  /transactions/user/{userId}:
+    get:
+      summary: Get transactions by user ID
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Transactions for user
+  /api-keys:
+    post:
+      summary: Create a new API key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                permissions:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '201':
+          description: API key created
+  /api-keys/{id}/rotate:
+    put:
+      summary: Rotate an API key
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: API key rotated
+  /api-keys/{id}/permissions:
+    put:
+      summary: Set API key permissions
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                permissions:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: API key permissions updated 
