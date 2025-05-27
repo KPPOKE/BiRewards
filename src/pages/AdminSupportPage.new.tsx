@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { MessageCircle, AlertCircle, Lightbulb, HelpCircle, Clock, User, RefreshCw, Search, Filter, Send } from 'lucide-react';
 
-// Flag to determine if we should use mock data as fallback
-const USE_MOCK_FALLBACK = true;
+// No mock data fallback - using only database
 
 interface Ticket {
   id: string;
@@ -45,104 +44,27 @@ const AdminSupportPage: React.FC = () => {
   // Check if user is admin or manager
   const isAuthorized = currentUser?.role === 'admin' || currentUser?.role === 'manager';
 
-  // Mock tickets data for development
-  const mockTickets: Ticket[] = [
-    {
-      id: '1',
-      subject: 'Points not showing up',
-      category: 'complaint',
-      status: 'open',
-      created_at: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-      updated_at: new Date(Date.now() - 86400000).toISOString(),
-      user_id: 'user1',
-      user_name: 'Test User',
-      user_email: 'testuser@example.com'
-    },
-    {
-      id: '2',
-      subject: 'How do I redeem rewards?',
-      category: 'general',
-      status: 'open',
-      created_at: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
-      updated_at: new Date(Date.now() - 172800000).toISOString(),
-      user_id: 'user2',
-      user_name: 'Karen',
-      user_email: 'usertest@gmail.com'
-    },
-    {
-      id: '3',
-      subject: 'App crashes on login',
-      category: 'complaint',
-      status: 'in progress',
-      created_at: new Date(Date.now() - 259200000).toISOString(), // 3 days ago
-      updated_at: new Date(Date.now() - 86400000).toISOString(),
-      user_id: 'user3',
-      user_name: 'Alfian',
-      user_email: 'alfian@gmail.com'
-    }
-  ];
+  // No mock data - using only database
 
-  // Mock messages for development
-  const mockMessages: Record<string, Message[]> = {
-    '1': [
-      {
-        id: '101',
-        user_id: 'user1',
-        ticket_id: '1',
-        message: 'I completed a purchase yesterday but my points haven\'t been added to my account yet.',
-        is_staff: false,
-        created_at: new Date(Date.now() - 86400000).toISOString(),
-        user_name: 'Test User'
-      }
-    ],
-    '2': [
-      {
-        id: '201',
-        user_id: 'user2',
-        ticket_id: '2',
-        message: 'I\'m new to the app and I\'m not sure how to redeem my points for rewards. Can you help?',
-        is_staff: false,
-        created_at: new Date(Date.now() - 172800000).toISOString(),
-        user_name: 'Karen'
-      }
-    ],
-    '3': [
-      {
-        id: '301',
-        user_id: 'user3',
-        ticket_id: '3',
-        message: 'Every time I try to log in, the app crashes. I\'m using the latest version.',
-        is_staff: false,
-        created_at: new Date(Date.now() - 259200000).toISOString(),
-        user_name: 'Alfian'
-      },
-      {
-        id: '302',
-        user_id: 'admin1',
-        ticket_id: '3',
-        message: 'I\'m sorry to hear about the issue. Could you please tell me what device and OS version you\'re using?',
-        is_staff: true,
-        created_at: new Date(Date.now() - 172800000).toISOString(),
-        user_name: 'Support Team'
-      },
-      {
-        id: '303',
-        user_id: 'user3',
-        ticket_id: '3',
-        message: 'I\'m using an iPhone 12 with iOS 15.4',
-        is_staff: false,
-        created_at: new Date(Date.now() - 129600000).toISOString(),
-        user_name: 'Alfian'
-      }
-    ]
-  };
+  // No mock messages - using only database
+
+  // Add delay function to prevent rate limiting
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+  
+  // Define base API URL to avoid typos
+  const API_BASE_URL = 'http://localhost:3000/api';
 
   const fetchTickets = async () => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('http://localhost:3000/api/support-tickets', {
+      // Add a small delay to prevent rate limiting
+      await delay(300);
+      
+      const res = await fetch(`${API_BASE_URL}/support-tickets`, {
         headers: { Authorization: `Bearer ${currentUser?.token}` },
+        // Add cache control to prevent duplicate requests
+        cache: 'no-cache'
       });
       
       if (!res.ok) {
@@ -155,12 +77,8 @@ const AdminSupportPage: React.FC = () => {
     } catch (err) {
       console.error('Error fetching tickets:', err);
       setError('Failed to load tickets. Please try again later.');
-      // Fallback to mock data if enabled
-      if (USE_MOCK_FALLBACK) {
-        console.log('Using mock data as fallback');
-        setTickets(mockTickets);
-        setFilteredTickets(mockTickets);
-      }
+      // No fallback to mock data - show error to user
+      console.error('Database connection error:', err);
     } finally {
       setLoading(false);
     }
@@ -170,8 +88,13 @@ const AdminSupportPage: React.FC = () => {
     setMessageLoading(true);
     setError('');
     try {
-      const res = await fetch(`http://localhost:3000/api/support-tickets/${ticketId}`, {
+      // Add a small delay to prevent rate limiting
+      await delay(300);
+      
+      const res = await fetch(`${API_BASE_URL}/support-tickets/${ticketId}`, {
         headers: { Authorization: `Bearer ${currentUser?.token}` },
+        // Add cache control to prevent duplicate requests
+        cache: 'no-cache'
       });
       
       if (!res.ok) {
@@ -183,11 +106,8 @@ const AdminSupportPage: React.FC = () => {
     } catch (err) {
       console.error('Error fetching messages:', err);
       setError('Failed to load messages. Please try again later.');
-      // Fallback to mock data if enabled
-      if (USE_MOCK_FALLBACK && mockMessages[ticketId]) {
-        console.log('Using mock data as fallback');
-        setMessages(mockMessages[ticketId] || []);
-      }
+      // No fallback to mock data - show error to user
+      console.error('Database connection error:', err);
     } finally {
       setMessageLoading(false);
     }
@@ -228,11 +148,21 @@ const AdminSupportPage: React.FC = () => {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await fetchTickets();
-    if (selectedTicket) {
-      await fetchMessages(selectedTicket.id);
+    setError(''); // Clear any previous errors
+    
+    try {
+      await fetchTickets();
+      if (selectedTicket) {
+        // Add a small delay between requests to prevent rate limiting
+        await delay(300);
+        await fetchMessages(selectedTicket.id);
+      }
+    } catch (err) {
+      console.error('Error during refresh:', err);
+      setError('Failed to refresh data. Please try again later.');
+    } finally {
+      setRefreshing(false);
     }
-    setRefreshing(false);
   };
 
   const handleSendReply = async (e: React.FormEvent) => {
@@ -242,7 +172,7 @@ const AdminSupportPage: React.FC = () => {
     setSending(true);
     setError('');
     try {
-      const res = await fetch(`http://localhost:3000/api/support-tickets/${selectedTicket.id}/messages`, {
+      const res = await fetch(`${API_BASE_URL}/support-tickets/${selectedTicket.id}/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -274,33 +204,8 @@ const AdminSupportPage: React.FC = () => {
       console.error('Error sending reply:', err);
       setError('Failed to send reply. Please try again later.');
       
-      // Fallback with mock data if enabled
-      if (USE_MOCK_FALLBACK) {
-        console.log('Using mock implementation as fallback');
-        const newMessage: Message = {
-          id: `mock-${Date.now()}`,
-          user_id: currentUser?.id || 'admin1',
-          ticket_id: selectedTicket.id,
-          message: reply,
-          is_staff: true,
-          created_at: new Date().toISOString(),
-          user_name: currentUser?.name || 'Support Team'
-        };
-        
-        setMessages(prev => [...prev, newMessage]);
-        setReply('');
-        
-        // Update ticket status to 'in progress' if it's 'open'
-        if (selectedTicket.status === 'open') {
-          const updatedTicket = { ...selectedTicket, status: 'in progress', updated_at: new Date().toISOString() };
-          setSelectedTicket(updatedTicket);
-          setTickets(prev => 
-            prev.map(ticket => 
-              ticket.id === selectedTicket.id ? updatedTicket : ticket
-            )
-          );
-        }
-      }
+      // No fallback to mock data - show error to user
+      console.error('Database connection error:', err);
     } finally {
       setSending(false);
     }
@@ -311,45 +216,77 @@ const AdminSupportPage: React.FC = () => {
     
     setError('');
     try {
-      const res = await fetch(`http://localhost:3000/api/support-tickets/${selectedTicket.id}/status`, {
+      // Show loading state
+      const loadingTicket = { ...selectedTicket, status: 'updating...' };
+      setSelectedTicket(loadingTicket);
+      
+      // Add a small delay to prevent rate limiting
+      await delay(300);
+      
+      // Now that we've fixed the backend API, let's use it properly
+      console.log('Updating ticket status to:', newStatus);
+      
+      // Make the API call to update the ticket status
+      const res = await fetch(`${API_BASE_URL}/support-tickets/${selectedTicket.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${currentUser?.token}`,
         },
         body: JSON.stringify({ status: newStatus }),
+        cache: 'no-cache'
       });
       
       if (!res.ok) {
         throw new Error(`API error: ${res.status}`);
       }
       
+      // Get the updated ticket data from the response
+      const updatedData = await res.json();
+      console.log('API response:', updatedData);
+      
+      // Use the data from the API response if available, otherwise create our own updated object
+      const ticketUpdate = updatedData?.ticket || {
+        ...selectedTicket,
+        status: newStatus,
+        updated_at: new Date().toISOString()
+      };
+      
       // Update local state after successful API call
-      const updatedTicket = { ...selectedTicket, status: newStatus, updated_at: new Date().toISOString() };
-      setSelectedTicket(updatedTicket);
+      setSelectedTicket(ticketUpdate);
+      
+      // Update both tickets and filteredTickets state with the updated ticket
       setTickets(prev => 
         prev.map(ticket => 
-          ticket.id === selectedTicket.id ? updatedTicket : ticket
+          ticket.id === selectedTicket.id ? ticketUpdate : ticket
+        )
+      );
+      setFilteredTickets(prev => 
+        prev.map(ticket => 
+          ticket.id === selectedTicket.id ? ticketUpdate : ticket
         )
       );
       
-      // Refresh ticket list to get the latest data
-      fetchTickets();
+      // Clear any previous errors
+      setError('');
+      console.log('Successfully updated ticket status to:', newStatus);
+      
+      // Force a refresh of tickets after a short delay
+      setTimeout(() => {
+        fetchTickets();
+      }, 1000);
+      
     } catch (err) {
       console.error('Error updating status:', err);
-      setError('Failed to update ticket status. Please try again later.');
       
-      // Fallback with mock data if enabled
-      if (USE_MOCK_FALLBACK) {
-        console.log('Using mock implementation as fallback');
-        const updatedTicket = { ...selectedTicket, status: newStatus, updated_at: new Date().toISOString() };
-        setSelectedTicket(updatedTicket);
-        setTickets(prev => 
-          prev.map(ticket => 
-            ticket.id === selectedTicket.id ? updatedTicket : ticket
-          )
-        );
+      // Revert the ticket status in UI
+      if (selectedTicket) {
+        setSelectedTicket({...selectedTicket});
       }
+      
+      // Set error message
+      setError('Failed to update ticket status. Please try again later.');
+      console.error('Database connection error:', err);
     }
   };
 

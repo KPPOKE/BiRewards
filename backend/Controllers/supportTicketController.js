@@ -18,20 +18,29 @@ const normalizeMessage = (message) => {
 
 // Create a new support ticket
 export const createTicket = async (req, res) => {
-  const { subject, message } = req.body;
+  const { subject, message, category, priority } = req.body;
   const userId = req.user.id;
   try {
+    // Use category and priority if provided, otherwise use defaults
     const ticketResult = await pool.query(
-      'INSERT INTO support_tickets (user_id, subject, status) VALUES ($1, $2, $3) RETURNING *',
-      [userId, subject, 'open']
+      'INSERT INTO support_tickets (user_id, subject, status, category, priority) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [userId, subject, 'open', category || 'general', priority || 'medium']
     );
     const ticket = ticketResult.rows[0];
     await pool.query(
       'INSERT INTO support_ticket_messages (ticket_id, sender_id, message) VALUES ($1, $2, $3)',
       [ticket.id, userId, message]
     );
+    
+    // Log this activity in customer_activity
+    await pool.query(
+      'INSERT INTO customer_activity (user_id, activity_type, description, metadata) VALUES ($1, $2, $3, $4)',
+      [userId, 'ticket_created', `Created support ticket: ${subject}`, JSON.stringify({ ticket_id: ticket.id })]
+    );
+    
     res.status(201).json({ success: true, ticket });
   } catch (err) {
+    console.error('Error creating ticket:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 };
@@ -192,6 +201,26 @@ export const addMessage = async (req, res) => {
       user_name: userName
     };
     
+    // Log this activity in customer_activity
+    const activityType = isAuthorized ? 'staff_reply' : 'customer_reply';
+    const description = isAuthorized 
+      ? `Staff member ${userName} replied to ticket` 
+      : `Customer replied to ticket`;
+    
+    await pool.query(
+      'INSERT INTO customer_activity (user_id, activity_type, description, metadata) VALUES ($1, $2, $3, $4)',
+      [
+        ticket.user_id, // Always log against the customer's ID
+        activityType,
+        description,
+        JSON.stringify({ 
+          ticket_id: ticketId, 
+          message_id: newMessage.id,
+          is_staff: isAuthorized
+        })
+      ]
+    );
+    
     res.status(201).json({ success: true, message: newMessage });
   } catch (err) {
     console.error('Error adding message:', err);
@@ -202,11 +231,43 @@ export const addMessage = async (req, res) => {
 // Update ticket status (admin or manager)
 export const updateTicketStatus = async (req, res) => {
   const ticketId = req.params.id;
-  const { status } = req.body;
+  let status;
+  
+  // Handle different request formats
+  if (req.body.status) {
+    // Standard format: { status: 'value' }
+    status = req.body.status;
+  } else if (req.body.id && req.body.status === undefined) {
+    // If client sent the ID but no status, look for status in other fields
+    status = req.body.newStatus || req.body.ticketStatus || 'open';
+  } else {
+    // Try to extract status from the entire body if it's a simple value
+    const bodyKeys = Object.keys(req.body);
+    if (bodyKeys.length === 1 && ['open', 'in progress', 'resolved', 'closed'].includes(req.body[bodyKeys[0]])) {
+      status = req.body[bodyKeys[0]];
+    } else {
+      // Default to the first status-like field we can find
+      status = req.body.status || req.body.newStatus || req.body.ticketStatus || 'open';
+    }
+  }
+  
+  // Log the received data for debugging
+  console.log('Updating ticket status:', { ticketId, receivedBody: req.body, extractedStatus: status });
+  
   const isAuthorized = req.user.role === 'admin' || req.user.role === 'manager';
+  const staffId = req.user.id;
   
   if (!isAuthorized) {
     return res.status(403).json({ success: false, error: 'Forbidden: Only admins and managers can update ticket status' });
+  }
+  
+  // Validate status value
+  const validStatuses = ['open', 'in progress', 'resolved', 'closed'];
+  if (!validStatuses.includes(status)) {
+    return res.status(400).json({ 
+      success: false, 
+      error: `Invalid status value. Must be one of: ${validStatuses.join(', ')}` 
+    });
   }
   
   try {
@@ -229,7 +290,38 @@ export const updateTicketStatus = async (req, res) => {
       updatedTicket.user_email = userResult.rows[0].email;
     }
     
-    res.json({ success: true, ticket: updatedTicket });
+    // Get staff info
+    const staffResult = await pool.query('SELECT name FROM users WHERE id = $1', [staffId]);
+    const staffName = staffResult.rows[0]?.name || 'Unknown Staff';
+    
+    // Log this activity in customer_activity
+    await pool.query(
+      'INSERT INTO customer_activity (user_id, activity_type, description, metadata) VALUES ($1, $2, $3, $4)',
+      [
+        updatedTicket.user_id,
+        'ticket_status_changed',
+        `Ticket status changed to ${status} by ${staffName}`,
+        JSON.stringify({ 
+          ticket_id: ticketId, 
+          old_status: updatedTicket.status,
+          new_status: status,
+          staff_id: staffId
+        })
+      ]
+    );
+    
+    // If ticket is being closed, check if it has a satisfaction rating
+    if (status === 'closed' && !updatedTicket.satisfaction_rating) {
+      // TODO: Send email to customer asking for feedback
+      console.log(`Ticket ${ticketId} closed without satisfaction rating. Consider requesting feedback.`);
+    }
+    
+    // Return the updated ticket with a clear success message
+    res.json({ 
+      success: true, 
+      message: `Ticket status updated to '${status}' successfully`,
+      ticket: updatedTicket 
+    });
   } catch (err) {
     console.error('Error updating ticket status:', err);
     res.status(500).json({ success: false, error: err.message });

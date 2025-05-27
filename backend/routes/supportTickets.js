@@ -11,7 +11,11 @@ router.use(protect);
 router.post('/', createTicket);
 router.get('/', getTickets);
 router.get('/:id', getTicketDetails);
+
+// Support multiple methods for updating ticket status
 router.patch('/:id', updateTicketStatus);
+router.put('/:id', updateTicketStatus);  // Add PUT method support
+router.put('/:id/status', updateTicketStatus);  // Add specific status endpoint
 
 // Message-specific routes
 router.get('/:id/messages', getTicketMessages);
