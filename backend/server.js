@@ -13,6 +13,7 @@ import apiDocsRoutes from './routes/api-docs.js';
 import { validateEnv } from './utils/validateEnv.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import supportTicketRoutes from './routes/supportTickets.js';
 
 // Get current directory
 const __filename = fileURLToPath(import.meta.url);
@@ -50,6 +51,7 @@ app.use('/api', userRoutes);
 app.use('/api', rewardRoutes);
 app.use('/api', transactionRoutes);
 app.use('/api-docs', apiDocsRoutes);
+app.use('/api/support-tickets', supportTicketRoutes);
 
 // Serve uploads directory for profile images
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));

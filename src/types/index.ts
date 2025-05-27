@@ -5,6 +5,7 @@ export interface User {
   role: 'user' | 'admin' | 'owner' | 'manager' | 'cashier' | 'waiter';
   points: number;
   createdAt: string;
+  token?: string;
 }
 
 export type Voucher = {

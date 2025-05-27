@@ -85,6 +85,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: 'Dashboard', href: 'dashboard', icon: Home, show: true },
     { name: 'Rewards', href: 'rewards', icon: Gift, show: canManageRewards(userRole) || userRole === 'user' },
     { name: 'Transactions', href: 'transactions', icon: Clock, show: canManagePoints(userRole) || userRole === 'user' },
+    { name: 'Support Tickets', href: 'support-tickets', icon: Bell, show: userRole === 'user' },
     { name: 'Manage Users', href: 'admin/users', icon: Users, show: canManageUsers(userRole) },
     { name: 'Manage Rewards', href: 'admin/rewards', icon: Award, show: canManageRewards(userRole) },
     { name: 'Add Points', href: 'admin/add-points', icon: Award, show: canAddPoints(userRole) || canManagePoints(userRole) },

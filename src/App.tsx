@@ -15,6 +15,7 @@ import OwnerDashboard from './components/dashboard/OwnerDashboard';
 import ManagerDashboard from './components/dashboard/ManagerDashboard';
 import CashierDashboard from './components/dashboard/CashierDashboard';
 import WaiterDashboard from './components/dashboard/WaiterDashboard';
+import SupportTicketsPage from './pages/SupportTicketsPage';
 
 import { Award } from 'lucide-react';
 
@@ -110,6 +111,8 @@ const AppContent: React.FC = () => {
             return <TransactionsPage />;
           case 'profile':
             return <UserProfilePage />;
+          case 'support-tickets':
+            return <SupportTicketsPage />;
           default:
             return <UserDashboard />;
         }
