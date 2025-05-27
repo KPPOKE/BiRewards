@@ -8,19 +8,45 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 // Utility function for API calls with retry logic
 async function fetchWithRetry(url: string, options: RequestInit, retries = 3, backoff = 300) {
   try {
-    const response = await fetch(url, options);
+    console.log(`Attempting fetch to ${url}`);
+    
+    // Add a timeout to the fetch request
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
+    const mergedOptions = {
+      ...options,
+      signal: controller.signal
+    };
+    
+    const response = await fetch(url, mergedOptions);
+    clearTimeout(timeoutId);
+    
+    // Log response status for debugging
+    console.log(`Response status: ${response.status} for ${url}`);
+    
+    // Handle rate limiting
     if (response.status === 429 && retries > 0) {
       console.log(`Rate limited, retrying after ${backoff}ms...`);
       await delay(backoff);
       return fetchWithRetry(url, options, retries - 1, backoff * 2);
     }
-    return response;
-  } catch (error) {
-    if (retries > 0) {
-      console.log(`Network error, retrying after ${backoff}ms...`);
+    
+    // Handle other error statuses
+    if (!response.ok && retries > 0) {
+      console.log(`Error status ${response.status}, retrying after ${backoff}ms...`);
       await delay(backoff);
       return fetchWithRetry(url, options, retries - 1, backoff * 2);
     }
+    
+    return response;
+  } catch (error) {
+    if (retries > 0) {
+      console.log(`Network error, retrying after ${backoff}ms...`, error);
+      await delay(backoff);
+      return fetchWithRetry(url, options, retries - 1, backoff * 2);
+    }
+    console.error('Fetch failed after all retries:', error);
     throw error;
   }
 }
@@ -73,10 +99,10 @@ const AdminSupportPage: React.FC = () => {
     // Don't fetch if component is unmounted
     if (!isMountedRef.current) return;
     
-    // Check if we've fetched tickets recently (within the last 3 seconds)
+    // Check if we've fetched tickets recently (within the last 1 second - reduced from 3 seconds)
     const now = Date.now();
     const timeSinceLastFetch = now - lastTicketFetchTimeRef.current;
-    const MIN_FETCH_INTERVAL = 3000; // 3 seconds
+    const MIN_FETCH_INTERVAL = 1000; // 1 second (reduced from 3 seconds to be more responsive)
     
     if (timeSinceLastFetch < MIN_FETCH_INTERVAL && lastTicketFetchTimeRef.current > 0) {
       console.log(`Skipping ticket fetch - last fetch was ${timeSinceLastFetch}ms ago`);
@@ -92,8 +118,10 @@ const AdminSupportPage: React.FC = () => {
       return;
     }
     
-    // For debugging - attempt direct database connection if backend is unresponsive
-    console.log('Attempting to fetch tickets directly from database');
+    // For debugging - log auth information
+    console.log('Current user:', currentUser);
+    console.log('Is authorized:', isAuthorized);
+    console.log('Auth token:', currentUser?.token);
     
     console.log('Fetching tickets at', new Date().toISOString());
     setLoading(true);
@@ -110,11 +138,15 @@ const AdminSupportPage: React.FC = () => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
       
+      // Log the headers being sent for debugging
+      const headers = { 
+        Authorization: `Bearer ${currentUser?.token}`,
+        'Cache-Control': 'no-cache, no-store, must-revalidate'
+      };
+      console.log('Request headers:', headers);
+      
       const res = await fetch(url, {
-        headers: { 
-          Authorization: `Bearer ${currentUser?.token}`,
-          'Cache-Control': 'no-cache, no-store, must-revalidate'
-        },
+        headers,
         signal: controller.signal
       });
       
@@ -158,12 +190,18 @@ const AdminSupportPage: React.FC = () => {
         setTickets(data);
         setFilteredTickets(data);
       }
-      // Wrapped object format
-      else if (data.tickets && Array.isArray(data.tickets)) {
+      // Wrapped object format with success property
+      else if (data.success && data.tickets && Array.isArray(data.tickets)) {
         console.log('Fetched tickets successfully (wrapped format):', data.tickets.length, 'tickets');
         setTickets(data.tickets);
         setFilteredTickets(data.tickets);
       } 
+      // Handle legacy format where data might be in a different property
+      else if (data.data && Array.isArray(data.data)) {
+        console.log('Fetched tickets successfully (legacy format):', data.data.length, 'tickets');
+        setTickets(data.data);
+        setFilteredTickets(data.data);
+      }
       // Empty or invalid response
       else {
         // Set empty arrays if no tickets are returned
@@ -178,6 +216,7 @@ const AdminSupportPage: React.FC = () => {
       // Log error but don't use mock data anymore
       console.log('Error fetching tickets but not using mock data as fallback');
     } finally {
+      // Always reset loading state to prevent UI from being stuck
       setLoading(false);
     }
   };
@@ -203,13 +242,26 @@ const AdminSupportPage: React.FC = () => {
       setTimeout(() => {
         fetchTickets();
       }, 500);
+      
+      // Safety timeout to prevent infinite loading
+      const safetyTimeout = setTimeout(() => {
+        if (loading && isMountedRef.current) {
+          console.log('Safety timeout triggered - resetting loading state');
+          setLoading(false);
+          setError('Request timed out. Please try refreshing.');
+        }
+      }, 15000); // 15 seconds timeout
+      
+      return () => {
+        clearTimeout(safetyTimeout);
+      };
     }
     
     return () => {
       // Mark component as unmounted when it's destroyed
       isMountedRef.current = false;
     };
-  }, [isAuthorized]); // Only re-run if authorization changes
+  }, [isAuthorized, loading]); // Re-run if authorization or loading state changes
   
   // Controlled message fetching function that prevents infinite loops
   const fetchMessages = async (ticketId: string) => {
@@ -226,6 +278,14 @@ const AdminSupportPage: React.FC = () => {
       setMessageLoading(true);
       setError('');
       
+      // Set a safety timeout to reset message loading state if it gets stuck
+      const messageLoadingTimeout = setTimeout(() => {
+        if (messageLoading && isMountedRef.current) {
+          console.log('Message loading safety timeout triggered');
+          setMessageLoading(false);
+        }
+      }, 10000); // 10 second timeout
+      
       try {
         // Ensure ticket ID is properly formatted
         const safeTicketId = String(ticketId);
@@ -238,13 +298,19 @@ const AdminSupportPage: React.FC = () => {
         // Add cache-busting parameter to prevent browser caching
         const cacheBustedUrl = `${url}?_=${Date.now()}`;
         
-        // Use fetchWithRetry to handle rate limiting with increased backoff
-        const res = await fetchWithRetry(cacheBustedUrl, {
-          headers: {
-            Authorization: `Bearer ${currentUser?.token}`,
-            'Cache-Control': 'no-cache, no-store, must-revalidate'
-          }
-        }, 5, 1000); // Increased retries and longer backoff for messages
+        // Log the headers being sent for debugging
+        const headers = {
+          Authorization: `Bearer ${currentUser?.token}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
+        };
+        console.log('Message request headers:', headers);
+        
+        // Use direct fetch instead of fetchWithRetry to avoid potential rate limiting issues
+        const res = await fetch(cacheBustedUrl, {
+          headers,
+          // Add a signal with a timeout to prevent hanging requests
+          signal: AbortSignal.timeout(15000) // 15 second timeout
+        });
         
         if (!res.ok) {
           throw new Error(`API error: ${res.status}`);
@@ -252,6 +318,9 @@ const AdminSupportPage: React.FC = () => {
         
         const data = await res.json();
         console.log('Message data received:', data);
+        
+        // Clear the safety timeout since we received a response
+        clearTimeout(messageLoadingTimeout);
         
         // Check if data is an array directly (matching the PostgreSQL response)
         if (Array.isArray(data)) {
@@ -298,6 +367,21 @@ const AdminSupportPage: React.FC = () => {
           
           console.log('Processed messages:', processedMessages);
           setMessages(processedMessages);
+        } 
+        // Handle data.data format (another possible format)
+        else if (data && Array.isArray(data.data)) {
+          const processedMessages = data.data.map((msg: any) => ({
+            ...msg,
+            is_staff: Boolean(
+              msg.is_staff === true || 
+              Number(msg.is_staff) === 1 || 
+              String(msg.is_staff) === '1' || 
+              String(msg.is_staff) === 'true'
+            )
+          }));
+          
+          console.log('Processed messages (data.data format):', processedMessages);
+          setMessages(processedMessages);
         } else {
           console.error('Invalid message data format:', data);
           throw new Error('Invalid data format received from server');
@@ -308,6 +392,8 @@ const AdminSupportPage: React.FC = () => {
         // Log error but don't use mock data anymore
         console.log(`Failed to fetch messages for ticket ${ticketId}. Using real database only.`);
       } finally {
+        // Always clear the timeout and reset loading state
+        clearTimeout(messageLoadingTimeout);
         setMessageLoading(false);
       }
   };
@@ -350,18 +436,28 @@ const AdminSupportPage: React.FC = () => {
     if (!selectedTicket) return;
     
     setRefreshing(true);
+    setError(''); // Clear any previous errors
+    
     try {
-      // Use the direct fetchTickets function
+      console.log('Manual refresh triggered by user');
+      
+      // Force reset any stuck loading states
+      setLoading(false);
+      setMessageLoading(false);
+      
+      // Small delay to ensure states are reset
+      await delay(100);
+      
+      // Refresh messages for the selected ticket
+      await fetchMessages(selectedTicket.id);
+      
+      // Also refresh the tickets list
       await fetchTickets();
-      if (selectedTicket) {
-        // Clear cache and fetch messages again
-        const ticketId = String(selectedTicket.id);
-        fetchedMessagesRef.current[ticketId] = false;
-        await fetchMessages(ticketId);
-      }
+      
+      console.log('Refresh completed successfully');
     } catch (err) {
       console.error('Error during refresh:', err);
-      setError('Failed to refresh: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      setError('Failed to refresh data: ' + (err instanceof Error ? err.message : 'Unknown error'));
     } finally {
       setRefreshing(false);
     }
