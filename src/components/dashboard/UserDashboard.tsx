@@ -4,7 +4,7 @@ import { useLoyalty } from '../../context/LoyaltyContext';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Badge from '../ui/Badge';
 import Button from '../ui/Button';
-import { Award, TrendingUp, Clock, Gift, ShoppingBag } from 'lucide-react';
+import { Award, TrendingUp, Clock, Gift, ShoppingBag, Wallet } from 'lucide-react';
 import { Transaction } from '../../types';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { UserRole } from '../../utils/roleAccess';
@@ -142,7 +142,7 @@ const UserDashboard: React.FC = () => {
         <StatCard 
           title="Total Spent" 
           value={totalSpent} 
-          icon={<ShoppingBag size={20} className="text-teal-600" />}
+          icon={<Wallet size={20} className="text-teal-600" />} 
           isAmount={true}
         />
         
@@ -341,17 +341,21 @@ const StatCard: React.FC<StatCardProps> = ({
   suffix = '',
   isAmount = false
 }) => {
+  // Responsive font size for value
+  const valueLength = (isAmount ? String(value) : String(`${prefix}${value}${suffix}`)).length;
+  const valueClass = valueLength > 10 ? 'text-xl' : 'text-2xl';
+
   return (
     <Card className="hover:shadow-md transition-shadow duration-200">
       <CardContent className="pt-5">
-        <div className="flex justify-between items-start">
+        <div className="flex justify-between items-center">
           <div>
             <p className="text-sm font-medium text-gray-500">{title}</p>
-            <p className="text-2xl font-bold mt-1">
+            <p className={`${valueClass} font-bold mt-1 break-words max-w-[9ch]`}>
               {isAmount ? formatCurrency(value) : `${prefix}${value}${suffix}`}
             </p>
           </div>
-          <div className="p-3 rounded-full bg-gray-50">
+          <div className="flex items-center justify-center w-12 h-12 p-3 rounded-full bg-gray-50">
             {icon}
           </div>
         </div>

@@ -7,6 +7,7 @@ import {
   ShoppingBag, 
   Gift, 
   Clock, 
+  Award,
   Search, 
   FilterX,
   Calendar,
@@ -68,6 +69,13 @@ const TransactionsPage: React.FC = () => {
           <Badge variant="warning" className="flex items-center">
             <Gift size={12} className="mr-1" />
             Redemption
+          </Badge>
+        );
+      case 'points_added':
+        return (
+          <Badge variant="info" className="flex items-center">
+            <Award size={12} className="mr-1" />
+            Points Added
           </Badge>
         );
       default:

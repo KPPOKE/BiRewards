@@ -68,12 +68,14 @@ export const LoyaltyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           // Extract the purchase amount from the description if it's not available in purchase_amount
           let extractedAmount = 0;
           if (t.type === 'points_added' && t.description) {
-            const match = t.description.match(/Rp(\d+)/i);
+            // Match numbers after 'Rp', allowing for commas or dots (e.g. 'Rp1,000,000' or 'Rp1.000.000')
+            const match = t.description.match(/Rp[\s]*([\d.,]+)/i);
             if (match && match[1]) {
-              extractedAmount = parseInt(match[1], 10);
+              // Remove commas and dots, then parse as integer
+              const cleaned = match[1].replace(/[.,]/g, '');
+              extractedAmount = parseInt(cleaned, 10);
             }
           }
-          
           // Use purchase_amount if available, otherwise use extracted amount from description
           const actualPurchaseAmount = t.purchase_amount || extractedAmount || 0;
           

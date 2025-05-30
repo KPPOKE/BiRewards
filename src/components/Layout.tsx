@@ -47,8 +47,42 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [activeRoute, setActiveRoute] = useState(window.location.hash.replace('#', '') || 'dashboard');
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [loadingNotifs, setLoadingNotifs] = useState(false);
 
   const userRole = (currentUser?.role as UserRole) || 'user';
+
+  // Fetch notifications for the current user
+  useEffect(() => {
+    if (!isNotifOpen || !currentUser) return;
+    const fetchNotifications = async () => {
+      setLoadingNotifs(true);
+      try {
+        // Replace this URL with your actual notifications API endpoint
+        const res = await fetch(`http://localhost:3000/api/users/${currentUser.id}/notifications`, {
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setNotifications(data.data || []);
+        } else {
+          // fallback to mock data if API fails
+          setNotifications([
+            { id: '1', message: 'Welcome to Bi Rewards!', read: false, createdAt: new Date().toISOString() },
+          ]);
+        }
+      } catch (error) {
+        setNotifications([
+          { id: '1', message: 'Welcome to Bi Rewards!', read: false, createdAt: new Date().toISOString() },
+        ]);
+      } finally {
+        setLoadingNotifs(false);
+      }
+    };
+    fetchNotifications();
+  }, [isNotifOpen, currentUser]);
   const userPoints = currentUser?.points || 0;
   const userStatus = getUserStatus(userPoints);
   const badgeClass = statusColors[userStatus as keyof typeof statusColors];
@@ -139,10 +173,36 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
 
             <div className="hidden sm:ml-6 sm:flex sm:items-center space-x-4">
-              {/* Notification Button */}
-              <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500">
-                <Bell size={20} />
-              </button>
+               {/* Notification Button */}
+               <div className="relative">
+                 <button
+                   className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500"
+                   onClick={() => setIsNotifOpen((prev) => !prev)}
+                   aria-haspopup="true"
+                   aria-expanded={isNotifOpen}
+                 >
+                   <Bell size={20} />
+                 </button>
+                 {isNotifOpen && (
+                   <div className="absolute right-0 mt-2 w-80 max-w-xs bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                     <div className="p-4 border-b font-semibold text-gray-700">Notifications</div>
+                     <div className="max-h-72 overflow-y-auto">
+                       {loadingNotifs ? (
+                         <div className="p-4 text-center text-gray-500">Loading...</div>
+                       ) : notifications.length === 0 ? (
+                         <div className="p-4 text-center text-gray-500">No notifications.</div>
+                       ) : (
+                         notifications.map((notif) => (
+                           <div key={notif.id} className={`px-4 py-2 border-b last:border-b-0 ${notif.read ? 'bg-gray-50' : 'bg-blue-50'}`}>
+                             <div className="text-sm text-gray-800">{notif.message}</div>
+                             <div className="text-xs text-gray-400 mt-1">{new Date(notif.createdAt).toLocaleString()}</div>
+                           </div>
+                         ))
+                       )}
+                     </div>
+                   </div>
+                 )}
+               </div>
 
               {/* Status Badge */}
               {showMemberStatus && (
