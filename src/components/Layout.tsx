@@ -48,7 +48,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [activeRoute, setActiveRoute] = useState(window.location.hash.replace('#', '') || 'dashboard');
   const [isNotifOpen, setIsNotifOpen] = useState(false);
-  const [notifications, setNotifications] = useState([]);
+  interface Notification {
+  id: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
+}
+const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loadingNotifs, setLoadingNotifs] = useState(false);
 
   const userRole = (currentUser?.role as UserRole) || 'user';

@@ -40,6 +40,7 @@ const ManagerDashboard: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [addForm, setAddForm] = useState({ title: '', points_cost: 0, is_active: true });
   const [addLoading, setAddLoading] = useState(false);
+  const [activityLogs, setActivityLogs] = useState<any[]>([]);
 
   useEffect(() => {
     if (userRole !== 'manager') return;
@@ -53,11 +54,16 @@ const ManagerDashboard: React.FC = () => {
         headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
         credentials: 'include',
       }).then(res => res.json()),
+      fetch(`${API_URL}/owner/stats`, {
+        headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
+        credentials: 'include',
+      }).then(res => res.json()),
     ])
-      .then(([rewardsRes, metricsRes]) => {
-        if (rewardsRes.success && metricsRes.success) {
+      .then(([rewardsRes, metricsRes, statsRes]) => {
+        if (rewardsRes.success && metricsRes.success && statsRes.success) {
           setRewards(rewardsRes.data);
           setTopUsers(metricsRes.data.topUsers || []);
+          setActivityLogs(statsRes.data.activityLogs || []);
           setError(null);
         } else {
           setError('Failed to fetch dashboard data');
@@ -366,6 +372,29 @@ const ManagerDashboard: React.FC = () => {
               </tbody>
             </table>
           </div>
+        </CardContent>
+      </Card>
+      {/* Cashier and Waiter Activity Logs */}
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Cashier and Waiter Activity Logs</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {activityLogs && activityLogs.length ? (
+            <ul className="divide-y divide-gray-200 bg-white rounded text-sm">
+              {activityLogs.map(log => (
+                <li key={log.id} className="flex justify-between items-center px-4 py-2">
+                  <div>
+                    <span className="font-semibold">{log.user_name}</span> <span className="text-gray-500">({log.role})</span>
+                    <span className="ml-2 text-gray-600">{log.description}</span>
+                  </div>
+                  <div className="text-gray-400">{new Date(log.created_at).toLocaleString()}</div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="text-gray-500">No recent activity logs.</div>
+          )}
         </CardContent>
       </Card>
     </div>

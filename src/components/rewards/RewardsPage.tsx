@@ -3,6 +3,7 @@ import { useLoyalty } from '../../context/LoyaltyContext';
 import { useAuth } from '../../context/AuthContext';
 import Card, { CardHeader, CardTitle, CardContent, CardFooter } from '../ui/Card';
 import Button from '../ui/Button';
+import ConfirmModal from '../ui/ConfirmModal';
 import Badge from '../ui/Badge';
 import { Award, Gift, Info, AlertTriangle } from 'lucide-react';
 import { Voucher } from '../../types';
@@ -13,30 +14,48 @@ const RewardsPage: React.FC = () => {
   const [redeemSuccess, setRedeemSuccess] = useState<string | null>(null);
   const [redeemError, setRedeemError] = useState<string | null>(null);
 
+  // Modal state
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
+  const [redeemLoading, setRedeemLoading] = useState(false);
+
   const points = currentUser?.points || 0;
-let tierColor = 'text-yellow-700'; // bronze (default)
+  let tierColor = 'text-yellow-700'; // bronze (default)
 
-if (points >= 1000) {
-  tierColor = 'text-yellow-500'; // gold
-} else if (points >= 500) {
-  tierColor = 'text-gray-500'; // silver
-}
+  if (points >= 1000) {
+    tierColor = 'text-yellow-500'; // gold
+  } else if (points >= 500) {
+    tierColor = 'text-gray-500'; // silver
+  }
 
-  const handleRedeemVoucher = async (voucher: Voucher) => {
-    if (!currentUser) return;
+  // Only open the modal, don't redeem yet
+  const handleRedeemVoucher = (voucher: Voucher) => {
+    setSelectedVoucher(voucher);
+    setConfirmOpen(true);
+  };
 
+  // Called ONLY from the confirmation modal
+  const handleConfirmRedeem = async () => {
+    if (!selectedVoucher || !currentUser) return;
+    setRedeemLoading(true);
+    setRedeemError(null);
+    setRedeemSuccess(null);
     try {
-      if (currentUser.points < voucher.pointsCost) {
-        setRedeemError(`You need ${voucher.pointsCost - currentUser.points} more points to redeem this reward.`);
+      if (currentUser.points < selectedVoucher.pointsCost) {
+        setRedeemError(`You need ${selectedVoucher.pointsCost - currentUser.points} more points to redeem this reward.`);
         setRedeemSuccess(null);
         setTimeout(() => setRedeemError(null), 3000);
+        setRedeemLoading(false);
+        setConfirmOpen(false);
+        setSelectedVoucher(null);
         return;
       }
-
-      const success = await redeemVoucher(voucher.id);
-      
+      const success = await redeemVoucher(selectedVoucher.id);
+      setRedeemLoading(false);
+      setConfirmOpen(false);
+      setSelectedVoucher(null);
       if (success) {
-        setRedeemSuccess(`You've successfully redeemed ${voucher.title}!`);
+        setRedeemSuccess(`You've successfully redeemed ${selectedVoucher.title}!`);
         setRedeemError(null);
         setTimeout(() => setRedeemSuccess(null), 3000);
       } else {
@@ -48,8 +67,12 @@ if (points >= 1000) {
       setRedeemError('An error occurred. Please try again.');
       setRedeemSuccess(null);
       setTimeout(() => setRedeemError(null), 3000);
+      setRedeemLoading(false);
+      setConfirmOpen(false);
+      setSelectedVoucher(null);
     }
   };
+
 
   return (
     <div className="space-y-6">
@@ -118,6 +141,17 @@ if (points >= 1000) {
           />
         ))}
       </div>
+
+      {/* Confirmation Modal */}
+      <ConfirmModal
+        open={confirmOpen}
+        title="Confirm Redemption"
+        description={selectedVoucher ? `Are you sure you want to redeem "${selectedVoucher.title}" for ${selectedVoucher.pointsCost} points? This action cannot be undone.` : ''}
+        confirmText={redeemLoading ? 'Processing...' : 'Yes, Redeem'}
+        cancelText="Cancel"
+        onConfirm={handleConfirmRedeem}
+        onCancel={() => { setConfirmOpen(false); setSelectedVoucher(null); }}
+      />
 
       {vouchers.length === 0 && (
         <div className="text-center py-12">

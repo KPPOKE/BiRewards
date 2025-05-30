@@ -187,6 +187,12 @@ export const redeemReward = async (req, res, next) => {
       )
     ]);
 
+    // Insert into user_vouchers
+    const userVoucherResult = await pool.query(
+      `INSERT INTO user_vouchers (user_id, reward_id, redeemed_at) VALUES ($1, $2, NOW()) RETURNING *`,
+      [userId, rewardId]
+    );
+
     await pool.query('COMMIT');
 
     res.json({
@@ -194,7 +200,8 @@ export const redeemReward = async (req, res, next) => {
       data: {
         transaction: transactionResult.rows[0],
         newPoints: updateResult.rows[0].points,
-        reward: reward
+        reward: reward,
+        userVoucher: userVoucherResult.rows[0]
       }
     });
   } catch (error) {

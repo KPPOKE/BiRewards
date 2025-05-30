@@ -205,29 +205,7 @@ const OwnerDashboard: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Recent Admin & Cashier Activity Logs */}
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Recent Admin & Cashier Activity Logs</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {stats?.activityLogs.length ? (
-            <ul className="divide-y divide-gray-200 bg-white rounded text-sm">
-              {stats.activityLogs.map(log => (
-                <li key={log.id} className="flex justify-between items-center px-4 py-2">
-                  <div>
-                    <span className="font-semibold">{log.user_name}</span> <span className="text-gray-500">({log.role})</span>
-                    <span className="ml-2 text-gray-600">{log.description}</span>
-                  </div>
-                  <div className="text-gray-400">{new Date(log.created_at).toLocaleString()}</div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="text-gray-500">No recent activity logs.</div>
-          )}
-        </CardContent>
-      </Card>
+
     </div>
   );
 };

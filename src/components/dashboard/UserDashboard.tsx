@@ -4,6 +4,7 @@ import { useLoyalty } from '../../context/LoyaltyContext';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Badge from '../ui/Badge';
 import Button from '../ui/Button';
+import ConfirmModal from '../ui/ConfirmModal';
 import { Award, TrendingUp, Clock, Gift, ShoppingBag, Wallet } from 'lucide-react';
 import { Transaction } from '../../types';
 import { formatCurrency } from '../../utils/formatCurrency';
@@ -45,19 +46,11 @@ const UserDashboard: React.FC = () => {
     return <div className="p-6 text-red-600 font-semibold">Not authorized to view this page.</div>;
   }
 
-  // Calculate some stats
-  // Based on the transaction history in the screenshots, we need to fix the total spent calculation
-  // The correct total should be 2x Rp100,000 + 3x Rp50,000 = Rp350,000
-  
-  // Since the dynamic calculation isn't working correctly, we'll use a hardcoded approach
-  // that correctly calculates the total based on the transaction descriptions
   
   // Map to store the correct purchase amounts for each transaction description
   const purchaseAmounts: {[key: string]: number} = {
     'Purchase Rp100,000': 100000,
-    'Purchase Rp100000': 100000,
     'Purchase Rp50,000': 50000,
-    'Purchase Rp50000': 50000
   };
   
   // Calculate total by matching transaction descriptions to known purchase amounts
@@ -87,17 +80,38 @@ const UserDashboard: React.FC = () => {
 
   // We don't need a separate date formatting function as we're using toLocaleDateString directly
 
-  const handleRedeemVoucher = async (voucherId: string) => {
-    const confirmed = window.confirm('Are you sure you want to redeem this voucher?');
-    if (confirmed) {
-      const success = await redeemVoucher(voucherId);
-      if (success) {
-        alert('Voucher redeemed successfully!');
-      } else {
-        alert('Failed to redeem voucher. You may not have enough points.');
-      }
-    }
+  // State for confirmation modal
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
+  const [selectedVoucherId, setSelectedVoucherId] = React.useState<string | null>(null);
+  const [redeemLoading, setRedeemLoading] = React.useState(false);
+  const [redeemMessage, setRedeemMessage] = React.useState<string | null>(null);
+
+  // Only opens the confirmation modal; does NOT redeem directly
+  const handleRedeemVoucher = (voucherId: string) => {
+    setSelectedVoucherId(voucherId);
+    setConfirmOpen(true);
   };
+
+  // Called ONLY from the confirmation modal
+  const handleConfirmRedeem = async () => {
+    if (!selectedVoucherId || !confirmOpen) return; // Defensive: only proceed if modal is open
+    setRedeemLoading(true);
+    setRedeemMessage(null);
+    const success = await redeemVoucher(selectedVoucherId);
+    setRedeemLoading(false);
+    setConfirmOpen(false);
+    setSelectedVoucherId(null);
+    if (success) {
+      setRedeemMessage('Voucher redeemed successfully!');
+    } else {
+      setRedeemMessage('Failed to redeem voucher. You may not have enough points.');
+    }
+    // Optionally, refresh rewards/transactions here
+    await refreshRewards();
+    await refreshTransactions();
+  };
+
+
 
   // Determine status based on points
   const getUserStatus = (points: number) => {
@@ -225,7 +239,7 @@ const UserDashboard: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {isLoading ? (
+                 {isLoading ? (
                   <div className="text-center py-6">
                     <p className="text-gray-500">Loading rewards...</p>
                   </div>
@@ -256,6 +270,22 @@ const UserDashboard: React.FC = () => {
                       </div>
                     ))
                 ) : null}
+
+                {/* Confirmation Modal */}
+                <ConfirmModal
+                  open={confirmOpen}
+                  title="Confirm Redemption"
+                  description="Are you sure you want to redeem this reward? This action cannot be undone."
+                  confirmText={redeemLoading ? 'Processing...' : 'Yes, Redeem'}
+                  cancelText="Cancel"
+                  onConfirm={handleConfirmRedeem}
+                  onCancel={() => { setConfirmOpen(false); setSelectedVoucherId(null); }}
+                />
+                {redeemMessage && (
+                  <div className="text-center py-2">
+                    <span className="text-green-600 font-medium">{redeemMessage}</span>
+                  </div>
+                )}
                 
                 {!isLoading && (!vouchers || vouchers.filter(v => v.isActive && v.pointsCost <= (currentUser?.points || 0)).length === 0) && (
                   <div className="text-center py-6">

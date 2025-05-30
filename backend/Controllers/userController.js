@@ -260,9 +260,9 @@ export const getOwnerStats = async (req, res, next) => {
 export const getOwnerUsersStats = async (req, res, next) => {
   try {
     const result = await pool.query(`
-      SELECT u.id, u.name, u.email, u.points, COALESCE(SUM(t.amount), 0) as total_purchase
+      SELECT u.id, u.name, u.email, u.points, COALESCE(SUM(t.purchase_amount), 0) as total_purchase
       FROM users u
-      LEFT JOIN transactions t ON u.id = t.user_id AND t.type = 'purchase'
+      LEFT JOIN transactions t ON u.id = t.user_id AND t.type = 'points_added' AND t.purchase_amount IS NOT NULL
       WHERE u.role = 'user'
       GROUP BY u.id, u.name, u.email, u.points
       ORDER BY total_purchase DESC
