@@ -35,12 +35,17 @@ export const getAllUsers = async (req, res, next) => {
 
 // Create new user
 export const createUser = async (req, res, next) => {
-  const { name, email, password, role = 'user' } = req.body;
+  const { name, email, phone, password, role = 'user' } = req.body;
 
   try {
     // Validate input
-    if (!name || !email || !password) {
-      return next(new AppError('Name, email and password are required', 400));
+    if (!name || !email || !phone || !password) {
+      return next(new AppError('Name, email, phone and password are required', 400));
+    }
+
+    // Validate phone format (basic)
+    if (!/^\+?\d{8,15}$/.test(phone)) {
+      return next(new AppError('Invalid phone number format', 400));
     }
 
     // Check if email already exists
@@ -49,13 +54,19 @@ export const createUser = async (req, res, next) => {
       return next(new AppError('Email already in use', 400));
     }
 
+    // Check if phone already exists
+    const existingPhone = await pool.query('SELECT * FROM users WHERE phone = $1', [phone]);
+    if (existingPhone.rows.length > 0) {
+      return next(new AppError('Phone number already in use', 400));
+    }
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user
     const result = await pool.query(
-      'INSERT INTO users (name, email, password, role, points) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, role, points',
-      [name, email, hashedPassword, role, 0]
+      'INSERT INTO users (name, email, phone, password, role, points) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, email, phone, role, points',
+      [name, email, phone, hashedPassword, role, 0]
     );
 
     res.status(201).json({
@@ -260,9 +271,9 @@ export const getOwnerStats = async (req, res, next) => {
 export const getOwnerUsersStats = async (req, res, next) => {
   try {
     const result = await pool.query(`
-      SELECT u.id, u.name, u.email, u.points, COALESCE(SUM(t.purchase_amount), 0) as total_purchase
+      SELECT u.id, u.name, u.email, u.points, COALESCE(SUM(CASE WHEN t.type = 'points_added' AND t.purchase_amount IS NOT NULL THEN t.purchase_amount ELSE 0 END), 0) as total_purchase
       FROM users u
-      LEFT JOIN transactions t ON u.id = t.user_id AND t.type = 'points_added' AND t.purchase_amount IS NOT NULL
+      LEFT JOIN transactions t ON u.id = t.user_id
       WHERE u.role = 'user'
       GROUP BY u.id, u.name, u.email, u.points
       ORDER BY total_purchase DESC
@@ -313,9 +324,10 @@ export const getOwnerMetrics = async (req, res, next) => {
     `);
     // Top 5 users by total purchase
     const topUsersResult = await pool.query(`
-      SELECT u.id, u.name, u.email, u.points, COALESCE(SUM(t.amount), 0) as total_purchase
+      SELECT u.id, u.name, u.email, u.points,
+             COALESCE(SUM(t.purchase_amount), 0) as total_purchase
       FROM users u
-      LEFT JOIN transactions t ON u.id = t.user_id AND t.type = 'purchase'
+      LEFT JOIN transactions t ON u.id = t.user_id AND t.purchase_amount IS NOT NULL
       WHERE u.role = 'user'
       GROUP BY u.id, u.name, u.email, u.points
       ORDER BY total_purchase DESC

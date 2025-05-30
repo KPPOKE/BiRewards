@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Card, { CardHeader, CardTitle, CardContent, CardFooter } from '../ui/Card';
-import { Mail, Lock, User, UserPlus } from 'lucide-react';
+import { Mail, Lock, User, UserPlus, Phone } from 'lucide-react';
 
 interface RegisterFormProps {
   onSuccess?: () => void;
@@ -14,6 +14,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onLoginClick }) 
   const { register, isLoading } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -23,8 +24,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onLoginClick }) 
     setError('');
 
     // Form validation
-    if (!name || !email || !password || !confirmPassword) {
+    if (!name || !email || !phone || !password || !confirmPassword) {
       setError('All fields are required');
+      return;
+    }
+    // Simple phone validation
+    if (!/^\+?\d{8,15}$/.test(phone)) {
+      setError('Please enter a valid phone number');
       return;
     }
 
@@ -39,12 +45,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onLoginClick }) 
     }
 
     try {
-      const success = await register(name, email, password);
+      const success = await register(name, email, phone, password);
       
       if (success) {
         if (onSuccess) onSuccess();
       } else {
-        setError('Email already in use or registration failed');
+        setError('Email or phone already in use or registration failed');
       }
     } catch (err) {
       setError('An error occurred during registration. Please try again.');
@@ -74,7 +80,16 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onLoginClick }) 
             leftIcon={<User size={18} />}
             required
           />
-          
+          <Input
+            label="Phone Number"
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="Enter your phone number"
+            fullWidth
+            leftIcon={<Phone size={18} />} // Changed to phone icon
+            required
+          />
           <Input
             label="Email"
             type="email"

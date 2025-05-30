@@ -12,6 +12,6 @@ app.use(express.json());
 app.use('/users', usersRoute);
 app.use('/api', authRoute); // tambahkan route login di sini
 
-app.listen(5000, () => {
-  console.log('Backend berjalan di http://localhost:5000');
+app.listen(3000, () => {
+  console.log('Backend berjalan di http://localhost:3000');
 });
