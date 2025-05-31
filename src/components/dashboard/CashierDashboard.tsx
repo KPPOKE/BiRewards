@@ -29,6 +29,8 @@ const CashierDashboard: React.FC = () => {
   const token = localStorage.getItem('token');
 
   const [phone, setPhone] = useState('');
+  const [name, setName] = useState('');
+  const [searchBy, setSearchBy] = useState<'phone' | 'name'>('phone');
   const [foundUser, setFoundUser] = useState<User | null>(null);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -53,16 +55,27 @@ const CashierDashboard: React.FC = () => {
   }, [token]);
 
   const handleSearch = async () => {
+    if ((searchBy === 'phone' && !phone) || (searchBy === 'name' && !name)) {
+      setSearchError(`Please enter a ${searchBy} to search`);
+      return;
+    }
+    
     setSearching(true);
     setSearchError(null);
     setFoundUser(null);
     setAddPointsMsg(null);
-    // TODO: Replace with real API after backend
+    
     try {
-      const res = await fetch(`${API_URL}/users/lookup?phone=${phone}`, {
+      // Build the query string based on search type
+      const queryParam = searchBy === 'phone' 
+        ? `phone=${encodeURIComponent(phone)}` 
+        : `name=${encodeURIComponent(name)}`;
+      
+      const res = await fetch(`${API_URL}/users/lookup?${queryParam}`, {
         headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
         credentials: 'include',
       });
+      
       const data = await res.json();
       if (data.success && data.data) {
         setFoundUser(data.data);
@@ -72,6 +85,7 @@ const CashierDashboard: React.FC = () => {
     } catch (err) {
       setSearchError('User not found');
     }
+    
     setSearching(false);
   };
 
@@ -142,17 +156,53 @@ const CashierDashboard: React.FC = () => {
         <Card>
           <CardHeader>
             <CardTitle>Customer Lookup</CardTitle>
-            <p className="text-gray-500 text-sm">Search for a customer by phone number.</p>
+            <p className="text-gray-500 text-sm">Search for a customer by phone number or name.</p>
           </CardHeader>
           <CardContent>
             <div className="flex gap-2 mb-4">
-              <Input
-                placeholder="Phone number"
-                value={phone}
-                onChange={e => setPhone(e.target.value)}
-                className="flex-1"
-              />
-              <Button onClick={handleSearch} isLoading={searching}>Search</Button>
+              <div className="flex-1">
+                <div className="flex mb-2">
+                  <div className="mr-4">
+                    <label className="inline-flex items-center cursor-pointer">
+                      <input 
+                        type="radio" 
+                        className="form-radio h-4 w-4 text-primary-500" 
+                        checked={searchBy === 'phone'} 
+                        onChange={() => setSearchBy('phone')}
+                      />
+                      <span className="ml-2 text-sm text-gray-700">Phone</span>
+                    </label>
+                  </div>
+                  <div>
+                    <label className="inline-flex items-center cursor-pointer">
+                      <input 
+                        type="radio" 
+                        className="form-radio h-4 w-4 text-primary-500" 
+                        checked={searchBy === 'name'} 
+                        onChange={() => setSearchBy('name')}
+                      />
+                      <span className="ml-2 text-sm text-gray-700">Name</span>
+                    </label>
+                  </div>
+                </div>
+                
+                {searchBy === 'phone' ? (
+                  <Input
+                    placeholder="Phone number"
+                    value={phone}
+                    onChange={e => setPhone(e.target.value)}
+                    className="w-full"
+                  />
+                ) : (
+                  <Input
+                    placeholder="Customer name"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    className="w-full"
+                  />
+                )}
+              </div>
+              <Button onClick={handleSearch} isLoading={searching} className="self-end">Search</Button>
             </div>
             {searchError && <div className="text-red-600 mb-2">{searchError}</div>}
             {foundUser && (

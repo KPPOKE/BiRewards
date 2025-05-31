@@ -405,22 +405,42 @@ export const getOwnerMetrics = async (req, res, next) => {
   }
 };
 
-// Get user by phone number
+// Get user by phone number or name
 export const getUserByPhone = async (req, res, next) => {
-  const { phone } = req.query;
-  if (!phone) {
-    return next(new AppError('Phone number is required', 400));
+  const { phone, name } = req.query;
+  
+  if (!phone && !name) {
+    return next(new AppError('Phone number or name is required', 400));
   }
+  
   try {
-    const result = await pool.query(
-      'SELECT id, name, phone, points FROM users WHERE phone = $1',
-      [phone]
-    );
+    let query = 'SELECT id, name, phone, points FROM users';
+    const params = [];
+    
+    if (phone && name) {
+      // Search by both phone and name
+      query += ' WHERE phone = $1 OR name ILIKE $2';
+      params.push(phone, `%${name}%`);
+    } else if (phone) {
+      // Search by phone only
+      query += ' WHERE phone = $1';
+      params.push(phone);
+    } else {
+      // Search by name only
+      query += ' WHERE name ILIKE $1';
+      params.push(`%${name}%`);
+    }
+    
+    const result = await pool.query(query, params);
+    
     if (result.rows.length === 0) {
       return next(new AppError('User not found', 404));
     }
+    
+    // If multiple users found (e.g., when searching by name), return the first one
     res.json({ success: true, data: result.rows[0] });
   } catch (error) {
-    next(new AppError('Error fetching user by phone', 500));
+    console.error('Error fetching user:', error);
+    next(new AppError('Error fetching user', 500));
   }
 };
