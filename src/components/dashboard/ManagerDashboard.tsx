@@ -28,7 +28,7 @@ interface TopUser {
 const ManagerDashboard: React.FC = () => {
   const { currentUser } = useAuth();
   const userRole = (currentUser?.role as UserRole) || 'user';
-  const token = (currentUser as any)?.token;
+  const token = localStorage.getItem('token');
 
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [topUsers, setTopUsers] = useState<TopUser[]>([]);
@@ -50,11 +50,11 @@ const ManagerDashboard: React.FC = () => {
         headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
         credentials: 'include',
       }).then(res => res.json()),
-      fetch(`${API_URL}/owner/metrics`, {
+      fetch(`${API_URL}/users/owner/metrics`, {
         headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
         credentials: 'include',
       }).then(res => res.json()),
-      fetch(`${API_URL}/owner/stats`, {
+      fetch(`${API_URL}/users/owner/stats`, {
         headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
         credentials: 'include',
       }).then(res => res.json()),

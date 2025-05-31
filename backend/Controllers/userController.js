@@ -3,6 +3,17 @@ import AppError from '../utils/AppError.js';
 import path from 'path';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import nodemailer from 'nodemailer';
+
+// Configure Nodemailer transporter for Gmail SMTP
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS
+  }
+});
+
 
 // Get all users with pagination
 export const getAllUsers = async (req, res, next) => {
@@ -39,25 +50,14 @@ export const createUser = async (req, res, next) => {
 
   try {
     // Validate input
-    if (!name || !email || !phone || !password) {
-      return next(new AppError('Name, email, phone and password are required', 400));
+    if (!name || !email || !password) {
+      return next(new AppError('Name, email, and password are required', 400));
     }
 
-    // Validate phone format (basic)
-    if (!/^\+?\d{8,15}$/.test(phone)) {
-      return next(new AppError('Invalid phone number format', 400));
-    }
-
-    // Check if email already exists
-    const existingUser = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    // Check if email or phone already exists
+    const existingUser = await pool.query('SELECT * FROM users WHERE email = $1 OR phone = $2', [email, phone]);
     if (existingUser.rows.length > 0) {
-      return next(new AppError('Email already in use', 400));
-    }
-
-    // Check if phone already exists
-    const existingPhone = await pool.query('SELECT * FROM users WHERE phone = $1', [phone]);
-    if (existingPhone.rows.length > 0) {
-      return next(new AppError('Phone number already in use', 400));
+      return next(new AppError('Email or phone already in use', 400));
     }
 
     // Hash password
@@ -65,16 +65,66 @@ export const createUser = async (req, res, next) => {
 
     // Create user
     const result = await pool.query(
-      'INSERT INTO users (name, email, phone, password, role, points) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, email, phone, role, points',
-      [name, email, phone, hashedPassword, role, 0]
+      'INSERT INTO users (name, email, phone, password, role, points, is_verified) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+      [name, email, phone, hashedPassword, role, 0, false]
     );
+
+    // OTP generation (6 digit)
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes from now
+    await pool.query(
+      'INSERT INTO otps (user_id, email, phone, otp_code, expires_at) VALUES ($1, $2, $3, $4, $5)',
+      [result.rows[0].id, email, phone, otpCode, expiresAt]
+    );
+
+    // Send OTP via email
+    await transporter.sendMail({
+      from: process.env.GMAIL_USER,
+      to: email,
+      subject: 'Your OTP Code',
+      text: `Your OTP code is: ${otpCode}`
+    });
 
     res.status(201).json({
       success: true,
-      data: result.rows[0]
+      data: result.rows[0],
+      message: 'OTP sent to email address.'
     });
   } catch (error) {
-    next(new AppError('Error creating user', 500));
+    console.error('Error in createUser:', error);
+    next(new AppError(error.message || 'Error creating user', 500));
+  }
+};
+
+// Verify OTP for email
+export const verifyOtp = async (req, res, next) => {
+  const { email, otp_code } = req.body;
+  try {
+    if (!email || !otp_code) {
+      return next(new AppError('Email and OTP code are required', 400));
+    }
+    // Find latest unverified OTP for this email
+    const otpResult = await pool.query(
+      'SELECT * FROM otps WHERE email = $1 AND verified = FALSE ORDER BY created_at DESC LIMIT 1',
+      [email]
+    );
+    if (otpResult.rows.length === 0) {
+      return next(new AppError('OTP not found or already verified', 400));
+    }
+    const otp = otpResult.rows[0];
+    if (otp.otp_code !== otp_code) {
+      return next(new AppError('Invalid OTP code', 400));
+    }
+    if (new Date() > new Date(otp.expires_at)) {
+      return next(new AppError('OTP has expired', 400));
+    }
+    // Mark OTP as verified
+    await pool.query('UPDATE otps SET verified = TRUE WHERE id = $1', [otp.id]);
+    // Mark user as verified
+    await pool.query('UPDATE users SET is_verified = TRUE WHERE email = $1', [email]);
+    res.json({ success: true, message: 'OTP verified successfully.' });
+  } catch (error) {
+    next(new AppError('Error verifying OTP', 500));
   }
 };
 
@@ -87,9 +137,15 @@ export const loginUser = async (req, res, next) => {
       return next(new AppError('User not found', 401));
     }
     const user = result.rows[0];
+    console.log('User found for login:', user); // Debugging
+    // Only require OTP verification for users with role 'user'
+    if (user.role === 'user' && !user.is_verified) {
+      return next(new AppError('Account not verified. Please check your email for the OTP.', 401));
+    }
     const passwordMatch = await bcrypt.compare(password, user.password);
+    console.log('Password match:', passwordMatch); // Debugging
     if (!passwordMatch) {
-      return next(new AppError('Invalid password', 401));
+      return next(new AppError('Invalid email or password', 401));
     }
     // Remove password from response
     delete user.password;
@@ -101,7 +157,8 @@ export const loginUser = async (req, res, next) => {
     );
     res.json({ success: true, token, data: user });
   } catch (error) {
-    next(new AppError('Error logging in', 500));
+    console.error('Error in loginUser:', error);
+    next(new AppError(error.message || 'Error logging in', 500));
   }
 };
 

@@ -33,7 +33,7 @@ interface OwnerMetrics {
 const OwnerDashboard: React.FC = () => {
   const { currentUser } = useAuth();
   const userRole = (currentUser?.role as UserRole) || 'user';
-  const token = (currentUser as any)?.token;
+  const token = localStorage.getItem('token');
 
   const [stats, setStats] = useState<OwnerStats | null>(null);
   const [metrics, setMetrics] = useState<OwnerMetrics | null>(null);
@@ -45,51 +45,47 @@ const OwnerDashboard: React.FC = () => {
   useEffect(() => {
     if (userRole !== 'owner' && userRole !== 'admin') return;
     setLoading(true);
-    fetch(`${API_URL}/owner/stats`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-      }
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          setStats(data.data);
-          setError(null);
-        } else {
+    
+    import('../../utils/api').then(api => {
+      api.get('/users/owner/stats')
+        .then(data => {
+          if (data.success) {
+            setStats(data.data);
+            setError(null);
+          } else {
+            setError('Failed to fetch stats');
+          }
+          setLoading(false);
+        })
+        .catch(err => {
+          console.error('Error fetching owner stats:', err);
           setError('Failed to fetch stats');
-        }
-        setLoading(false);
-      })
-      .catch(() => {
-        setError('Failed to fetch stats');
-        setLoading(false);
-      });
+          setLoading(false);
+        });
+    });
   }, [userRole, token]);
 
   useEffect(() => {
     if (userRole !== 'owner' && userRole !== 'admin') return;
     setMetricsLoading(true);
-    fetch(`${API_URL}/owner/metrics`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-      }
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          setMetrics(data.data);
-          setMetricsError(null);
-        } else {
-          setMetricsError('Failed to fetch metrics');
-        }
-        setMetricsLoading(false);
-      })
-      .catch(() => {
-        setMetricsError('Failed to fetch metrics');
-        setMetricsLoading(false);
-      });
+    
+    import('../../utils/api').then(api => {
+      api.get('/users/owner/metrics')
+        .then(data => {
+          if (data.success) {
+            setMetrics(data.data);
+            setMetricsError(null);
+          } else {
+            setMetricsError('Failed to fetch dashboard data');
+          }
+          setMetricsLoading(false);
+        })
+        .catch(err => {
+          console.error('Error fetching owner metrics:', err);
+          setMetricsError('Failed to fetch dashboard data');
+          setMetricsLoading(false);
+        });
+    });
   }, [userRole, token]);
 
   if (userRole !== 'owner' && userRole !== 'admin') {

@@ -72,6 +72,7 @@ export const getTickets = async (req, res) => {
       );
     }
     
+    console.log('Tickets returned to frontend:', result.rows);
     res.json({ success: true, tickets: result.rows });
   } catch (err) {
     console.error('Error fetching tickets:', err);

@@ -95,7 +95,7 @@ app.use('/api/support-tickets', (req, res, next) => {
 });
 
 // Routes
-app.use('/api', userRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api', rewardRoutes);
 app.use('/api', transactionRoutes);
 app.use('/api', pointsRoutes); // Register the points routes

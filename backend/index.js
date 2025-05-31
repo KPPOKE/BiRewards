@@ -9,7 +9,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.use('/users', usersRoute);
+app.use('/api/users', usersRoute);
 app.use('/api', authRoute); // tambahkan route login di sini
 
 app.listen(3000, () => {

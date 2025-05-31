@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { vouchers as mockVouchers } from '../../utils/mockData';
+import React, { useState, useEffect } from 'react';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
@@ -17,7 +16,9 @@ const AdminRewardsPage: React.FC = () => {
     return <div className="p-6 text-red-600 font-semibold">Not authorized to view this page.</div>;
   }
 
-  const [vouchers, setVouchers] = useState<Voucher[]>(mockVouchers);
+  const [vouchers, setVouchers] = useState<Voucher[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -31,6 +32,40 @@ const AdminRewardsPage: React.FC = () => {
     expiryDays: 30,
     isActive: true,
   });
+
+  useEffect(() => {
+    const fetchVouchers = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch('http://localhost:3000/api/rewards', {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
+          credentials: 'include',
+        });
+        const data = await res.json();
+        if (data.success) {
+          setVouchers(
+            data.data.map((item: any) => ({
+              ...item,
+              pointsCost: item.points_cost,
+              isActive: item.is_active,
+              expiryDays: item.expiry_days,
+            }))
+          );
+        } else {
+          setError('Failed to fetch rewards');
+        }
+      } catch (err) {
+        setError('Failed to fetch rewards');
+      }
+      setLoading(false);
+    };
+    fetchVouchers();
+  }, []);
 
   // Filter vouchers based on search term
   const filteredVouchers = vouchers.filter(voucher => 
@@ -145,110 +180,122 @@ const AdminRewardsPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Rewards Management</h1>
           <p className="text-gray-600 mt-1">Manage all rewards and vouchers in the loyalty program</p>
         </div>
-        <Button 
-          className="mt-4 sm:mt-0"
-          leftIcon={<Plus size={16} />}
-          onClick={() => setShowAddModal(true)}
-        >
-          Add Reward
-        </Button>
+        {/* Removed duplicate Add Reward button here as requested */}
       </div>
 
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <CardTitle>Rewards</CardTitle>
-            <Input
-              placeholder="Search rewards..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              leftIcon={<Search size={16} />}
-              className="w-full sm:w-64"
-            />
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder="Search rewards..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                leftIcon={<Search size={16} />}
+                className="w-full sm:w-64"
+              />
+              <Button
+                variant="primary"
+                leftIcon={<Plus size={16} />}
+                onClick={() => setShowAddModal(true)}
+              >
+                Add Reward
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">Title</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">Description</th>
-                  <th className="text-center py-3 px-4 font-medium text-gray-600 text-sm">Points Cost</th>
-                  <th className="text-center py-3 px-4 font-medium text-gray-600 text-sm">Expiry</th>
-                  <th className="text-center py-3 px-4 font-medium text-gray-600 text-sm">Status</th>
-                  <th className="text-right py-3 px-4 font-medium text-gray-600 text-sm">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredVouchers.map((voucher) => (
-                  <tr key={voucher.id} className="hover:bg-gray-50">
-                    <td className="py-3 px-4 text-sm font-medium text-gray-900">
-                      <div className="flex items-center">
-                        <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 font-semibold mr-3">
-                          <Gift size={16} />
-                        </div>
-                        {voucher.title}
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-sm text-gray-600 max-w-xs truncate">
-                      {voucher.description}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-center font-medium">
-                      <Badge variant="primary">
-                        {voucher.pointsCost} pts
-                      </Badge>
-                    </td>
-                    <td className="py-3 px-4 text-sm text-center text-gray-600">
-                      <div className="flex items-center justify-center">
-                        <Calendar size={14} className="mr-2 text-gray-400" />
-                        {voucher.expiryDays} days
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <button
-                        className="inline-flex items-center text-sm font-medium"
-                        onClick={() => toggleVoucherStatus(voucher.id)}
-                      >
-                        {voucher.isActive ? (
-                          <>
-                            <ToggleRight size={20} className="mr-1 text-green-600" />
-                            <span className="text-green-600">Active</span>
-                          </>
-                        ) : (
-                          <>
-                            <ToggleLeft size={20} className="mr-1 text-gray-400" />
-                            <span className="text-gray-500">Inactive</span>
-                          </>
-                        )}
-                      </button>
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        leftIcon={<Pencil size={14} />}
-                        onClick={() => handleEditClick(voucher)}
-                      >
-                        Edit
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {filteredVouchers.length === 0 && (
-            <div className="text-center py-8">
-              <Gift size={40} className="mx-auto text-gray-300 mb-3" />
-              <h3 className="text-lg font-medium text-gray-900">No rewards found</h3>
-              <p className="text-gray-500 mt-1">
-                {searchTerm 
-                  ? 'Try a different search term' 
-                  : 'Add rewards to get started'}
-              </p>
-            </div>
+          {loading && (
+            <div className="text-center py-8 text-gray-500">Loading rewards...</div>
+          )}
+          {error && (
+            <div className="text-center py-8 text-red-600 font-semibold">{error}</div>
+          )}
+          {!loading && !error && (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">Title</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">Description</th>
+                      <th className="text-center py-3 px-4 font-medium text-gray-600 text-sm">Points Cost</th>
+                      <th className="text-center py-3 px-4 font-medium text-gray-600 text-sm">Expiry</th>
+                      <th className="text-center py-3 px-4 font-medium text-gray-600 text-sm">Status</th>
+                      <th className="text-right py-3 px-4 font-medium text-gray-600 text-sm">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {filteredVouchers.map((voucher) => (
+                      <tr key={voucher.id} className="hover:bg-gray-50">
+                        <td className="py-3 px-4 text-sm font-medium text-gray-900">
+                          <div className="flex items-center">
+                            <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 font-semibold mr-3">
+                              <Gift size={16} />
+                            </div>
+                            {voucher.title}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-600 max-w-xs truncate">
+                          {voucher.description}
+                        </td>
+                        <td className="py-3 px-4 text-sm text-center font-medium">
+                          <Badge variant="primary">
+                            {voucher.pointsCost} pts
+                          </Badge>
+                        </td>
+                        <td className="py-3 px-4 text-sm text-center text-gray-600">
+                          <div className="flex items-center justify-center">
+                            <Calendar size={14} className="mr-2 text-gray-400" />
+                            {voucher.expiryDays} days
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <button
+                            className="inline-flex items-center text-sm font-medium"
+                            onClick={() => toggleVoucherStatus(voucher.id)}
+                          >
+                            {voucher.isActive ? (
+                              <>
+                                <ToggleRight size={20} className="mr-1 text-green-600" />
+                                <span className="text-green-600">Active</span>
+                              </>
+                            ) : (
+                              <>
+                                <ToggleLeft size={20} className="mr-1 text-gray-400" />
+                                <span className="text-gray-500">Inactive</span>
+                              </>
+                            )}
+                          </button>
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            leftIcon={<Pencil size={14} />}
+                            onClick={() => handleEditClick(voucher)}
+                          >
+                            Edit
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {filteredVouchers.length === 0 && (
+                <div className="text-center py-8">
+                  <Gift size={40} className="mx-auto text-gray-300 mb-3" />
+                  <h3 className="text-lg font-medium text-gray-900">No rewards found</h3>
+                  <p className="text-gray-500 mt-1">
+                    {searchTerm 
+                      ? 'Try a different search term' 
+                      : 'Add rewards to get started'}
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

@@ -14,6 +14,8 @@ interface UserWithCreatedAt extends UserType {
   created_at?: string;
 }
 
+type RoleFilter = 'user' | 'admin' | 'manager' | '';
+
 const AdminUsersPage: React.FC = () => {
   const { currentUser } = useAuth();
   const userRole = (currentUser?.role as UserRole) || 'user';
@@ -27,6 +29,10 @@ const AdminUsersPage: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingUser, setEditingUser] = useState<UserWithCreatedAt | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>('user');
+  const pageSize = 10;
   
   // New user state
   const [newUser, setNewUser] = useState({
@@ -38,27 +44,41 @@ const AdminUsersPage: React.FC = () => {
 
   useEffect(() => {
     const fetchUsers = async () => {
-      const token = (currentUser as any)?.token;
-      const res = await fetch('http://localhost:3000/api/users', {
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        },
-        credentials: 'include',
-      });
-      const data = await res.json();
-      if (data.success) setUsers(data.data);
+      const token = localStorage.getItem('token');
+      try {
+        const params = new URLSearchParams({
+          page: page.toString(),
+          limit: pageSize.toString(),
+          ...(roleFilter ? { role: roleFilter } : {}),
+          ...(searchTerm ? { search: searchTerm } : {}),
+        });
+        const res = await fetch(`http://localhost:3000/api/users?${params.toString()}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
+          credentials: 'include',
+        });
+        const data = await res.json();
+        if (data.success) {
+          setUsers(data.data);
+          if (data.pagination && data.pagination.totalPages) {
+            setTotalPages(data.pagination.totalPages);
+          } else {
+            setTotalPages(1);
+          }
+        } else {
+          console.error('Failed to fetch users:', data);
+        }
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
     };
     fetchUsers();
-  }, [currentUser]);
+  }, [currentUser, page, roleFilter, searchTerm]);
 
-  // Filter users based on search term and only show users with role 'user'
-  const filteredUsers = users.filter(user => 
-    user.role === 'user' && (
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  );
+  // No need to filter here, backend handles filtering
+  const filteredUsers = users;
 
   const handleAddUser = () => {
     // Simple validation
@@ -192,18 +212,36 @@ const AdminUsersPage: React.FC = () => {
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <CardTitle>Users</CardTitle>
-            <Input
-              placeholder="Search users..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              leftIcon={<Search size={16} />}
-              className="w-full sm:w-64"
-            />
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder="Search users..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setPage(1);
+                }}
+                leftIcon={<Search size={16} />}
+                className="w-full sm:w-64"
+              />
+              <select
+                value={roleFilter}
+                onChange={e => {
+                  setRoleFilter(e.target.value as RoleFilter);
+                  setPage(1);
+                }}
+                className="ml-2 px-3 py-2 border rounded text-gray-700"
+              >
+                <option value="">All Roles</option>
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+                <option value="manager">Manager</option>
+              </select>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="min-w-full divide-y divide-gray-200">
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">Name</th>
@@ -215,63 +253,88 @@ const AdminUsersPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
-                    <td className="py-3 px-4 text-sm font-medium text-gray-900">
-                      <div className="flex items-center">
-                        <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 font-semibold mr-3">
-                          {user.name.charAt(0)}
-                        </div>
-                        {user.name}
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-sm text-gray-600">{user.email}</td>
-                    <td className="py-3 px-4">
-                      <Badge
-                        variant={user.role === 'admin' ? 'primary' : 'secondary'}
-                      >
-                        {user.role === 'admin' ? 'Admin' : 'User'}
-                      </Badge>
-                    </td>
-                    <td className="py-3 px-4 text-sm text-right font-medium">
-                      <div className="flex items-center justify-end">
-                        <Award size={16} className="mr-1 text-purple-600" />
-                        {user.points}
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-sm text-gray-600">
-                      <div className="flex items-center">
-                        <Calendar size={14} className="mr-2 text-gray-400" />
-                        {formatDate(user.created_at || '')}
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        leftIcon={<Pencil size={14} />}
-                        onClick={() => handleEditClick(user)}
-                      >
-                        Edit
-                      </Button>
+                {filteredUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="text-center py-4 text-gray-500">
+                      No users found.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredUsers.map((user: UserWithCreatedAt, idx: number) => (
+                    <tr key={user.id} className="hover:bg-gray-50">
+                      <td className="py-3 px-4 text-sm font-medium text-gray-900">
+                        <div className="flex items-center">
+                          <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 font-semibold mr-3">
+                            {user.name.charAt(0)}
+                          </div>
+                          {user.name}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-sm text-gray-600">{user.email}</td>
+                      <td className="py-3 px-4">
+                        <Badge
+                          variant={user.role === 'admin' ? 'primary' : 'secondary'}
+                        >
+                          {user.role === 'admin' ? 'Admin' : user.role === 'manager' ? 'Manager' : 'User'}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-4 text-sm text-right font-medium">
+                        <div className="flex items-center justify-end">
+                          <Award size={16} className="mr-1 text-purple-600" />
+                          {user.points}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-sm text-gray-600">
+                        <div className="flex items-center">
+                          <Calendar size={14} className="mr-2 text-gray-400" />
+                          {formatDate(user.created_at || '')}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          leftIcon={<Pencil size={14} />}
+                          onClick={() => handleEditClick(user)}
+                        >
+                          Edit
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
-          </div>
-
-          {filteredUsers.length === 0 && (
-            <div className="text-center py-8">
-              <User size={40} className="mx-auto text-gray-300 mb-3" />
-              <h3 className="text-lg font-medium text-gray-900">No users found</h3>
-              <p className="text-gray-500 mt-1">
-                {searchTerm 
-                  ? 'Try a different search term' 
-                  : 'Add users to get started'}
-              </p>
+            {filteredUsers.length === 0 && (
+              <div className="text-center py-8">
+                <User size={40} className="mx-auto text-gray-300 mb-3" />
+                <h3 className="text-lg font-medium text-gray-900">No users found</h3>
+                <p className="text-gray-500 mt-1">
+                  {searchTerm 
+                    ? 'Try a different search term' 
+                    : 'Add users to get started'}
+                </p>
+              </div>
+            )}
+            {/* Pagination controls */}
+            <div className="flex items-center justify-center gap-4 mt-4">
+              <button
+                className="px-3 py-1 border rounded disabled:opacity-50"
+                onClick={() => setPage(page - 1)}
+                disabled={page === 1}
+              >
+                Previous
+              </button>
+              <span>Page {page} of {totalPages}</span>
+              <button
+                className="px-3 py-1 border rounded disabled:opacity-50"
+                onClick={() => setPage(page + 1)}
+                disabled={page === totalPages}
+              >
+                Next
+              </button>
             </div>
-          )}
+          </div>
         </CardContent>
       </Card>
 

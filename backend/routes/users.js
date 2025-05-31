@@ -10,7 +10,8 @@ import {
   getOwnerStats,
   getOwnerUsersStats,
   getOwnerMetrics,
-  getUserByPhone
+  getUserByPhone,
+  verifyOtp
 } from '../Controllers/userController.js'
 import multer from 'multer';
 import path from 'path';
@@ -46,24 +47,25 @@ const upload = multer({
 });
 
 // Protected routes
-router.get('/users', protect, authorize('admin', 'manager'), getAllUsers);
-router.get('/users/lookup', protect, authorize('cashier', 'waiter'), getUserByPhone);
-router.post('/users', protect, authorize('admin'), validate(schemas.user.create), auditLog('user_created'), createUser);
-router.put('/users/:id', protect, authorize('admin'), validate(schemas.user.update), auditLog('user_updated'), updateUser);
-router.delete('/users/:id', protect, authorize('admin'), auditLog('user_deleted'), deleteUser);
+router.get('/', protect, authorize('admin', 'manager'), getAllUsers);
+router.get('/lookup', protect, authorize('cashier', 'waiter', 'admin', 'manager', 'owner'), getUserByPhone);
+router.post('/', protect, authorize('admin'), validate(schemas.user.create), auditLog('user_created'), createUser);
+router.put('/:id', protect, authorize('admin'), validate(schemas.user.update), auditLog('user_updated'), updateUser);
+router.delete('/:id', protect, authorize('admin'), auditLog('user_deleted'), deleteUser);
 
 // Profile routes
-router.get('/users/:id/profile', protect, getUserProfile);
-router.post('/users/:id/profile-image', protect, upload.single('profile_image'), uploadProfileImage);
-router.put('/users/:id/profile', protect, updateUser);
+router.get('/:id/profile', protect, getUserProfile);
+router.post('/:id/profile-image', protect, upload.single('profile_image'), uploadProfileImage);
+router.put('/:id/profile', protect, updateUser);
 
 // Public routes (no authentication required)
-router.post('/users/login', validate(schemas.user.login), loginUser);
-router.post('/users/register', validate(schemas.user.create), createUser);
+router.post('/login', validate(schemas.user.login), loginUser);
+router.post('/verify-otp', verifyOtp);
+router.post('/register', validate(schemas.user.create), createUser);
 
 // Owner stats route (admin/owner/manager)
-router.get('/owner/stats', protect, authorize('owner', 'admin', 'manager'), getOwnerStats);
-router.get('/owner/users-stats', protect, authorize('owner', 'admin', 'manager'), getOwnerUsersStats);
-router.get('/owner/metrics', protect, authorize('owner', 'admin', 'manager'), getOwnerMetrics);
+router.get('/owner/stats', protect, authorize('owner', 'admin', 'manager', 'cashier', 'waiter'), getOwnerStats);
+router.get('/owner/users-stats', protect, authorize('owner', 'admin', 'manager', 'cashier', 'waiter'), getOwnerUsersStats);
+router.get('/owner/metrics', protect, authorize('owner', 'admin', 'manager', 'cashier', 'waiter'), getOwnerMetrics);
 
 export default router;

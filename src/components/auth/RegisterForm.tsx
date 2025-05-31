@@ -4,6 +4,7 @@ import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Card, { CardHeader, CardTitle, CardContent, CardFooter } from '../ui/Card';
 import { Mail, Lock, User, UserPlus, Phone } from 'lucide-react';
+import OtpModal from './OtpModal';
 
 interface RegisterFormProps {
   onSuccess?: () => void;
@@ -18,6 +19,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onLoginClick }) 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [otpModalOpen, setOtpModalOpen] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,9 +49,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onLoginClick }) 
 
     try {
       const success = await register(name, email, phone, password);
-      
       if (success) {
-        if (onSuccess) onSuccess();
+        setRegisteredEmail(email);
+        setOtpModalOpen(true);
+        // DO NOT call onSuccess() here. Only after OTP verified!
       } else {
         setError('Email or phone already in use or registration failed');
       }
@@ -58,7 +62,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onLoginClick }) 
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <>
+      <Card className="w-full max-w-md mx-auto">
       <CardHeader>
         <CardTitle className="text-center text-2xl">Create an Account</CardTitle>
       </CardHeader>
@@ -147,6 +152,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onLoginClick }) 
         </p>
       </CardFooter>
     </Card>
+    <OtpModal
+      open={otpModalOpen}
+      email={registeredEmail}
+      onClose={() => setOtpModalOpen(false)}
+      onSuccess={onSuccess || (() => {})}
+    />
+    </>
   );
 };
 

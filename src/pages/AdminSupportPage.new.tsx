@@ -62,12 +62,23 @@ const AdminSupportPage: React.FC = () => {
       await delay(300);
       
       const res = await fetch(`${API_BASE_URL}/support-tickets`, {
-        headers: { Authorization: `Bearer ${currentUser?.token}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem('token') || currentUser?.token || ''}` },
         // Add cache control to prevent duplicate requests
         cache: 'no-cache'
       });
       
       if (!res.ok) {
+        // Stop retrying if unauthorized or rate limited
+        if (res.status === 401) {
+          setError('Session expired or unauthorized. Please log in again.');
+          setLoading(false);
+          return;
+        }
+        if (res.status === 429) {
+          setError('Too many requests. Please wait and try again.');
+          setLoading(false);
+          return;
+        }
         throw new Error(`API error: ${res.status}`);
       }
       
@@ -91,13 +102,25 @@ const AdminSupportPage: React.FC = () => {
       // Add a small delay to prevent rate limiting
       await delay(300);
       
+      const token = localStorage.getItem('token') || currentUser?.token || '';
       const res = await fetch(`${API_BASE_URL}/support-tickets/${ticketId}`, {
-        headers: { Authorization: `Bearer ${currentUser?.token}` },
+        headers: { Authorization: `Bearer ${token}` },
         // Add cache control to prevent duplicate requests
         cache: 'no-cache'
       });
       
       if (!res.ok) {
+        // Stop retrying if unauthorized or rate limited
+        if (res.status === 401) {
+          setError('Session expired or unauthorized. Please log in again.');
+          setLoading(false);
+          return;
+        }
+        if (res.status === 429) {
+          setError('Too many requests. Please wait and try again.');
+          setLoading(false);
+          return;
+        }
         throw new Error(`API error: ${res.status}`);
       }
       
@@ -172,11 +195,12 @@ const AdminSupportPage: React.FC = () => {
     setSending(true);
     setError('');
     try {
+      const token = localStorage.getItem('token') || currentUser?.token || '';
       const res = await fetch(`${API_BASE_URL}/support-tickets/${selectedTicket.id}/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${currentUser?.token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           message: reply,
@@ -187,6 +211,17 @@ const AdminSupportPage: React.FC = () => {
       });
       
       if (!res.ok) {
+        // Stop retrying if unauthorized or rate limited
+        if (res.status === 401) {
+          setError('Session expired or unauthorized. Please log in again.');
+          setLoading(false);
+          return;
+        }
+        if (res.status === 429) {
+          setError('Too many requests. Please wait and try again.');
+          setLoading(false);
+          return;
+        }
         throw new Error(`API error: ${res.status}`);
       }
       
@@ -227,17 +262,29 @@ const AdminSupportPage: React.FC = () => {
       console.log('Updating ticket status to:', newStatus);
       
       // Make the API call to update the ticket status
+      const token = localStorage.getItem('token') || currentUser?.token || '';
       const res = await fetch(`${API_BASE_URL}/support-tickets/${selectedTicket.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${currentUser?.token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ status: newStatus }),
         cache: 'no-cache'
       });
       
       if (!res.ok) {
+        // Stop retrying if unauthorized or rate limited
+        if (res.status === 401) {
+          setError('Session expired or unauthorized. Please log in again.');
+          setLoading(false);
+          return;
+        }
+        if (res.status === 429) {
+          setError('Too many requests. Please wait and try again.');
+          setLoading(false);
+          return;
+        }
         throw new Error(`API error: ${res.status}`);
       }
       

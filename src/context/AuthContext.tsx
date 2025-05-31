@@ -40,16 +40,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       const response = await res.json();
-      setCurrentUser({ ...response.data, token: response.token });
-      localStorage.setItem('currentUser', JSON.stringify({ ...response.data, token: response.token }));
+      
+      if (response.success && response.token && response.data) {
+        // Store user data and token
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('currentUser', JSON.stringify(response.data));
+        setCurrentUser(response.data);
+        setIsLoading(false);
+        return true;
+      }
+      
       setIsLoading(false);
-      return true;
+      return false;
     } catch (error) {
       setIsLoading(false);
       return false;
     }
   };
 
+  // Registration will keep phone field, but OTP is sent to email, not phone.
   const register = async (name: string, email: string, phone: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     try {
@@ -59,18 +68,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         body: JSON.stringify({ name, email, phone, password }),
       });
 
+      const response = await res.json();
+
       if (!res.ok) {
+        // Show backend error message if present
+        if (response && response.message) {
+          alert(response.message); // Replace with your toast/snackbar as needed
+        }
         setIsLoading(false);
         return false;
       }
 
-      const response = await res.json();
-      setCurrentUser({ ...response.data, token: response.token });
-      localStorage.setItem('currentUser', JSON.stringify({ ...response.data, token: response.token }));
+      // Registration succeeded, OTP sent to email
       setIsLoading(false);
       return true;
     } catch (error) {
       setIsLoading(false);
+      alert('Registration failed. Please try again.');
       return false;
     }
   };

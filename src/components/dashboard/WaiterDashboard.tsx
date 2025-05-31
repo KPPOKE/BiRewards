@@ -26,7 +26,7 @@ interface Reward {
 const WaiterDashboard: React.FC = () => {
   const { currentUser } = useAuth();
   const userRole = (currentUser?.role as UserRole) || 'user';
-  const token = (currentUser as any)?.token;
+  const token = localStorage.getItem('token');
 
   const [phone, setPhone] = useState('');
   const [foundUser, setFoundUser] = useState<User | null>(null);
@@ -59,7 +59,7 @@ const WaiterDashboard: React.FC = () => {
     setAddPointsMsg(null);
     // TODO: Replace with real API after backend
     try {
-      const res = await fetch(`${API_URL}/users/lookup?phone=${encodeURIComponent(phone)}`, {
+      const res = await fetch(`${API_URL}/users/lookup?phone=${phone}`, {
         headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
         credentials: 'include',
       });

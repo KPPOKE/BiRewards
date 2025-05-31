@@ -8,6 +8,7 @@ interface ConfirmModalProps {
   cancelText?: string;
   onConfirm: () => void;
   onCancel: () => void;
+  children?: React.ReactNode;
 }
 
 const ConfirmModal: React.FC<ConfirmModalProps> = ({
@@ -18,6 +19,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
   cancelText = 'Cancel',
   onConfirm,
   onCancel,
+  children,
 }) => {
   if (!open) return null;
   return (
@@ -25,6 +27,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
       <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-xs">
         <h3 className="text-lg font-semibold mb-2">{title}</h3>
         {description && <p className="text-gray-600 mb-4">{description}</p>}
+        {children}
         <div className="flex justify-end gap-2 mt-4">
           <button
             className="px-4 py-2 rounded bg-gray-200 text-gray-800 hover:bg-gray-300"
