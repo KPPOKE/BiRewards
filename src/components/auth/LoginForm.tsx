@@ -95,15 +95,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onRegisterClick }) => 
           </button>
         </p>
       </CardFooter>
-
-      {/* Demo accounts info */}
-      <div className="px-5 pb-5 mt-2">
-        <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded-md">
-          <p className="font-medium mb-1">Demo Accounts:</p>
-          <p>User: user@example.com (no password needed)</p>
-          <p>Admin: admin@example.com (no password needed)</p>
-        </div>
-      </div>
     </Card>
   );
 };

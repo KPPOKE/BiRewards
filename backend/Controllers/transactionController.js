@@ -1,5 +1,6 @@
 import pool from '../db.js';
 import AppError from '../utils/AppError.js';
+import { createActivityLog } from './activityLogController.js';
 
 // Get user transactions with pagination
 export const getUserTransactions = async (req, res, next) => {
@@ -107,6 +108,21 @@ export const addPoints = async (req, res, next) => {
          RETURNING *`,
         [userId, pointsToAdd, description]
       );
+    }
+
+    // Create activity log (do NOT block transaction commit on log error)
+    try {
+      await createActivityLog({
+        actor_id: req.user.id,
+        actor_role: req.user.role,
+        target_id: userId,
+        target_role: 'customer',
+        description: description || `Added ${pointsToAdd} points`,
+        points_added: pointsToAdd
+      }, client);
+    } catch (logErr) {
+      console.error('Failed to log activity:', logErr);
+      // Do not throw, just log
     }
 
     // Commit the transaction

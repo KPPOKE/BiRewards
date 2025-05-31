@@ -68,4 +68,93 @@ router.get('/owner/stats', protect, authorize('owner', 'admin', 'manager', 'cash
 router.get('/owner/users-stats', protect, authorize('owner', 'admin', 'manager', 'cashier', 'waiter'), getOwnerUsersStats);
 router.get('/owner/metrics', protect, authorize('owner', 'admin', 'manager', 'cashier', 'waiter'), getOwnerMetrics);
 
+// New routes for owner dashboard data
+router.get('/owner/user_growth', protect, authorize('owner', 'admin', 'manager'), (req, res) => {
+  const { granularity = 'month' } = req.query;
+  
+  // Temporary mock data for user growth trends
+  const mockData = [];
+  const today = new Date();
+  
+  // Generate mock data based on granularity
+  if (granularity === 'month') {
+    for (let i = 0; i < 12; i++) {
+      const month = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      mockData.unshift({
+        label: month.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+        total_users: Math.floor(500 - i * 25 + Math.random() * 50),
+        new_users: Math.floor(40 - i * 2 + Math.random() * 15)
+      });
+    }
+  } else if (granularity === 'year') {
+    for (let i = 0; i < 5; i++) {
+      const year = today.getFullYear() - i;
+      mockData.unshift({
+        label: year.toString(),
+        total_users: Math.floor(500 - i * 75 + Math.random() * 100),
+        new_users: Math.floor(150 - i * 20 + Math.random() * 40)
+      });
+    }
+  } else { // day
+    for (let i = 0; i < 14; i++) {
+      const day = new Date(today);
+      day.setDate(today.getDate() - i);
+      mockData.unshift({
+        label: day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        total_users: Math.floor(500 - i * 3 + Math.random() * 20),
+        new_users: Math.floor(10 - i * 0.5 + Math.random() * 8)
+      });
+    }
+  }
+  
+  return res.status(200).json({
+    success: true,
+    data: mockData
+  });
+});
+
+router.get('/owner/points_stats', protect, authorize('owner', 'admin', 'manager'), (req, res) => {
+  const { granularity = 'month' } = req.query;
+  
+  // Temporary mock data for points transaction overview
+  const mockData = [];
+  const today = new Date();
+  
+  // Generate mock data based on granularity
+  if (granularity === 'month') {
+    for (let i = 0; i < 12; i++) {
+      const month = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      mockData.unshift({
+        label: month.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+        points_issued: Math.floor(2000 - i * 100 + Math.random() * 400),
+        points_redeemed: Math.floor(1500 - i * 80 + Math.random() * 300)
+      });
+    }
+  } else if (granularity === 'year') {
+    for (let i = 0; i < 5; i++) {
+      const year = today.getFullYear() - i;
+      mockData.unshift({
+        label: year.toString(),
+        points_issued: Math.floor(10000 - i * 1000 + Math.random() * 2000),
+        points_redeemed: Math.floor(8000 - i * 800 + Math.random() * 1500)
+      });
+    }
+  } else { // day
+    for (let i = 0; i < 14; i++) {
+      const day = new Date(today);
+      day.setDate(today.getDate() - i);
+      mockData.unshift({
+        label: day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        points_issued: Math.floor(200 - i * 5 + Math.random() * 50),
+        points_redeemed: Math.floor(150 - i * 4 + Math.random() * 40)
+      });
+    }
+  }
+  
+  return res.status(200).json({
+    success: true,
+    data: mockData
+  });
+});
+
 export default router;

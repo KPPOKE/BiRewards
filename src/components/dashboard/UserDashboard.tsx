@@ -15,26 +15,7 @@ const UserDashboard: React.FC = () => {
   const { userTransactions, vouchers, redeemVoucher, refreshTransactions, refreshRewards, isLoading, lastRefreshTime } = useLoyalty();
   const userRole = (currentUser?.role as UserRole) || 'user';
   
-  // Refresh rewards data when component mounts
-  React.useEffect(() => {
-    // Only fetch data when component mounts and user is authenticated
-    if (currentUser) {
-      // Use a flag to ensure we only fetch once during component mount
-      const fetchData = async () => {
-        try {
-          await refreshRewards();
-          await refreshTransactions();
-        } catch (error) {
-          console.error('Error refreshing data:', error);
-        }
-      };
-      
-      fetchData();
-    }
-    // Empty dependency array ensures this only runs once when component mounts
-    // We intentionally omit refreshRewards and refreshTransactions from dependencies
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser]);
+
   
   // Add a second useEffect to refresh data when lastRefreshTime changes
   React.useEffect(() => {
@@ -201,7 +182,7 @@ const UserDashboard: React.FC = () => {
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  onClick={() => window.location.href = '/transactions'}
+                  onClick={() => location.hash = '#transactions'}
                 >
                   View All
                 </Button>

@@ -17,6 +17,7 @@ import { validateEnv } from './utils/validateEnv.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import supportTicketRoutes from './routes/supportTickets.js';
+import activityLogRoutes from './routes/activityLogRoutes.js';
 
 // Get current directory
 const __filename = fileURLToPath(import.meta.url);
@@ -103,6 +104,7 @@ app.use('/api', directPointsRoutes); // Register the direct points routes
 app.use('/api-docs', apiDocsRoutes);
 app.use('/api/support-tickets', supportTicketRoutes);
 app.use('/api/customers', customerRoutes);
+app.use('/api', activityLogRoutes);
 
 // Serve uploads directory for profile images
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));

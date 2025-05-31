@@ -17,6 +17,11 @@ import CashierDashboard from './components/dashboard/CashierDashboard';
 import WaiterDashboard from './components/dashboard/WaiterDashboard';
 import SupportTicketsPage from './pages/SupportTicketsPage';
 import AdminSupportPage from './pages/AdminSupportPage';
+import TopUsersPerformancePage from './components/dashboard/TopUsersPerformancePage';
+import ActivityLogsPage from './components/dashboard/ActivityLogsPage';
+import UserGrowthTrendsPage from './components/dashboard/UserGrowthTrendsPage';
+import PointsTransactionOverviewPage from './components/dashboard/PointsTransactionOverviewPage';
+import OwnerTopUsersPage from './components/dashboard/OwnerTopUsersPage';
 
 import { Award } from 'lucide-react';
 
@@ -85,18 +90,43 @@ const AppContent: React.FC = () => {
   const renderPage = () => {
     switch (role) {
       case 'owner':
-        return <OwnerDashboard />;
+        switch (activePage) {
+          case 'dashboard':
+            return <OwnerDashboard />;
+          case 'user-growth-trends':
+            return <UserGrowthTrendsPage />;
+          case 'points-transaction-overview':
+            return <PointsTransactionOverviewPage />;
+          case 'owner-top-users':
+            return <OwnerTopUsersPage />;
+          default:
+            return <OwnerDashboard />;
+        }
       case 'manager':
         switch (activePage) {
+          case 'dashboard':
+            return <ManagerDashboard />;
+          case 'top-users':
+            return <TopUsersPerformancePage />;
+          case 'activity-logs':
+            return <ActivityLogsPage />;
           case 'admin/support':
             return <AdminSupportPage />;
           default:
             return <ManagerDashboard />;
-        };
+        }
       case 'cashier':
-        return <CashierDashboard />;
+        switch (activePage) {
+          case 'dashboard':
+          default:
+            return <CashierDashboard />;
+        }
       case 'waiter':
-        return <WaiterDashboard />;
+        switch (activePage) {
+          case 'dashboard':
+          default:
+            return <WaiterDashboard />;
+        }
       case 'admin':
         switch (activePage) {
           case 'admin/users':
@@ -108,11 +138,12 @@ const AppContent: React.FC = () => {
           case 'admin/support':
             return <AdminSupportPage />;
           default:
-            return <UserDashboard />;
+            return <AdminUsersPage />;
         }
       case 'user':
-      default:
         switch (activePage) {
+          case 'dashboard':
+            return <UserDashboard />;
           case 'rewards':
             return <RewardsPage />;
           case 'transactions':

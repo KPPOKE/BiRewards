@@ -94,9 +94,12 @@ export const LoyaltyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           };
         });
         
-        setTransactions(mappedTransactions);
-        setUserTransactions(mappedTransactions);
+        // Deduplicate transactions by id before setting state
+        const uniqueTransactions: Transaction[] = Array.from(new Map(mappedTransactions.map((t: Transaction) => [t.id, t])).values());
+        setTransactions(uniqueTransactions);
+        setUserTransactions(uniqueTransactions);
         setFetchedTransactions(true);
+        setLastRefreshTime((prev) => ({ ...prev, transactions: Date.now() }));
       }
     } catch (error) {
       console.error('Error fetching transactions:', error);
@@ -133,18 +136,19 @@ export const LoyaltyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const data = await response.json();
       
       if (data.success && data.data) {
-        console.log('Fetched rewards from API:', data.data);
-        // Map backend reward format to frontend voucher format
-        const mappedVouchers = data.data.map((r: any) => ({
-          id: r.id.toString(),
-          title: r.title,
-          description: r.description,
-          pointsCost: r.points_cost,
-          expiryDays: r.expiry_days || 30, // Default to 30 days if not specified
-          isActive: typeof r.is_active === 'boolean' ? r.is_active : r.is_active === 1
+        // Map snake_case fields to camelCase
+        const mappedVouchers = data.data.map((item: any) => ({
+          id: item.id.toString(),
+          title: item.title,
+          description: item.description,
+          pointsCost: item.points_cost,
+          expiryDays: item.expiry_days,
+          isActive: typeof item.is_active === 'boolean' ? item.is_active : item.is_active === 1
         }));
         
-        setVouchers(mappedVouchers);
+        // Deduplicate vouchers by id before setting state
+        const uniqueVouchers: Voucher[] = Array.from(new Map(mappedVouchers.map((v: Voucher) => [v.id, v])).values());
+        setVouchers(uniqueVouchers);
         setFetchedRewards(true);
       } else {
         console.error('Failed to fetch rewards:', data);
@@ -240,7 +244,8 @@ export const LoyaltyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       };
 
       // Update both transactions and userTransactions arrays
-      const updatedTransactions = [...transactions, newTransaction];
+      // Deduplicate transactions by id before setting state
+      const updatedTransactions: Transaction[] = Array.from(new Map([...transactions, newTransaction].map((t: Transaction) => [t.id, t])).values());
       setTransactions(updatedTransactions);
       setUserTransactions(updatedTransactions);
       

@@ -19,8 +19,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const storedUser = localStorage.getItem('currentUser');
+    const storedToken = localStorage.getItem('token');
     if (storedUser) {
-      setCurrentUser(JSON.parse(storedUser));
+      const userObj = JSON.parse(storedUser);
+      // Merge token into user object if not present
+      if (storedToken && !userObj.token) {
+        userObj.token = storedToken;
+      }
+      setCurrentUser(userObj);
     }
     setIsLoading(false);
   }, []);
@@ -42,10 +48,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await res.json();
       
       if (response.success && response.token && response.data) {
-        // Store user data and token
+        // Merge token into user object
+        const userWithToken = { ...response.data, token: response.token };
         localStorage.setItem('token', response.token);
-        localStorage.setItem('currentUser', JSON.stringify(response.data));
-        setCurrentUser(response.data);
+        localStorage.setItem('currentUser', JSON.stringify(userWithToken));
+        setCurrentUser(userWithToken);
         setIsLoading(false);
         return true;
       }

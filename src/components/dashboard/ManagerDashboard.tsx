@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+// NOTE: You must run 'npm install xlsx' for the export feature to work
+import * as XLSX from 'xlsx';
 import { useAuth } from '../../context/AuthContext';
 import { UserRole } from '../../utils/roleAccess';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
@@ -42,6 +44,24 @@ const ManagerDashboard: React.FC = () => {
   const [addLoading, setAddLoading] = useState(false);
   const [activityLogs, setActivityLogs] = useState<any[]>([]);
 
+  // Export to Excel handler (must be inside component to access activityLogs)
+  const handleExportExcel = () => {
+    if (!activityLogs || !activityLogs.length) return;
+    const data = activityLogs.map((log: any) => ({
+      'Date/Time': new Date(log.created_at).toLocaleString(),
+      'Actor Name': log.actor_name,
+      'Actor Role': log.actor_role,
+      'Target Name': log.target_name,
+      'Target Role': log.target_role,
+      'Action/Description': log.description,
+      'Points Added': typeof log.points_added !== 'undefined' ? log.points_added : '',
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Activity Logs');
+    XLSX.writeFile(workbook, 'activity_logs.xlsx');
+  };
+
   useEffect(() => {
     if (userRole !== 'manager') return;
     setLoading(true);
@@ -54,16 +74,16 @@ const ManagerDashboard: React.FC = () => {
         headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
         credentials: 'include',
       }).then(res => res.json()),
-      fetch(`${API_URL}/users/owner/stats`, {
+      fetch(`${API_URL}/activity-logs`, {
         headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
         credentials: 'include',
       }).then(res => res.json()),
     ])
-      .then(([rewardsRes, metricsRes, statsRes]) => {
-        if (rewardsRes.success && metricsRes.success && statsRes.success) {
+      .then(([rewardsRes, metricsRes, logsRes]) => {
+        if (rewardsRes.success && metricsRes.success && logsRes.success) {
           setRewards(rewardsRes.data);
           setTopUsers(metricsRes.data.topUsers || []);
-          setActivityLogs(statsRes.data.activityLogs || []);
+          setActivityLogs(logsRes.data || []);
           setError(null);
         } else {
           setError('Failed to fetch dashboard data');
@@ -169,7 +189,7 @@ const ManagerDashboard: React.FC = () => {
   return (
     <div className="p-6 space-y-8">
       <h1 className="text-2xl font-bold mb-4">Manager Dashboard</h1>
-      {/* Rewards Management Table */}
+      {/* Rewards Management Table (only table remains, all other dashboard cards/features removed) */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Rewards Management</CardTitle>
@@ -344,61 +364,10 @@ const ManagerDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Top Users Performance Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Top Users Performance</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="py-2 px-4 text-left">Name</th>
-                  <th className="py-2 px-4 text-left">Email</th>
-                  <th className="py-2 px-4 text-right">Points</th>
-                  <th className="py-2 px-4 text-right">Total Purchase</th>
-                </tr>
-              </thead>
-              <tbody>
-                {topUsers.map(user => (
-                  <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-2 px-4">{user.name}</td>
-                    <td className="py-2 px-4">{user.email}</td>
-                    <td className="py-2 px-4 text-right">{user.points}</td>
-                    <td className="py-2 px-4 text-right">{user.total_purchase}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-      {/* Cashier and Waiter Activity Logs */}
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Cashier and Waiter Activity Logs</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {activityLogs && activityLogs.length ? (
-            <ul className="divide-y divide-gray-200 bg-white rounded text-sm">
-              {activityLogs.map(log => (
-                <li key={log.id} className="flex justify-between items-center px-4 py-2">
-                  <div>
-                    <span className="font-semibold">{log.user_name}</span> <span className="text-gray-500">({log.role})</span>
-                    <span className="ml-2 text-gray-600">{log.description}</span>
-                  </div>
-                  <div className="text-gray-400">{new Date(log.created_at).toLocaleString()}</div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="text-gray-500">No recent activity logs.</div>
-          )}
-        </CardContent>
-      </Card>
+
     </div>
   );
 };
 
 export default ManagerDashboard;
+
