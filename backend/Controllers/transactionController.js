@@ -112,6 +112,15 @@ export const addPoints = async (req, res, next) => {
 
     // Create activity log (do NOT block transaction commit on log error)
     try {
+      console.log('[DEBUG] addPoints called by user:', req.user);
+      console.log('[DEBUG] ActivityLog payload:', {
+        actor_id: req.user.id,
+        actor_role: req.user.role,
+        target_id: userId,
+        target_role: 'customer',
+        description: description || `Added ${pointsToAdd} points`,
+        points_added: pointsToAdd
+      });
       await createActivityLog({
         actor_id: req.user.id,
         actor_role: req.user.role,
