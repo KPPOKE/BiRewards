@@ -40,13 +40,20 @@ export const LoyaltyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const isFetchingTransactions = useRef(false);
   const isFetchingRewards = useRef(false);
 
+  // Reset fetch flags when currentUser changes (login/logout)
+  useEffect(() => {
+    setFetchedRewards(false);
+    setFetchedTransactions(false);
+  }, [currentUser]);
+
   // Fetch user transactions from the API
   const fetchUserTransactions = async () => {
     // Skip if already fetching to prevent duplicate calls
     if (!currentUser || !currentUser.id || isFetchingTransactions.current) return;
     
     // In development mode, respect the fetchedTransactions flag to prevent infinite loops
-    if (DEV_MODE && fetchedTransactions) return;
+    // Only block repeated fetches in dev mode if currentUser hasn't changed
+    if (DEV_MODE && fetchedTransactions && currentUser) return;
     
     isFetchingTransactions.current = true;
     setIsLoading(true);
@@ -95,7 +102,7 @@ export const LoyaltyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         });
         
         // Deduplicate transactions by id before setting state
-        const uniqueTransactions: Transaction[] = Array.from(new Map(mappedTransactions.map((t: Transaction) => [t.id, t])).values());
+        const uniqueTransactions = Array.from(new Map(mappedTransactions.map((t: Transaction) => [t.id, t])).values()) as Transaction[];
         setTransactions(uniqueTransactions);
         setUserTransactions(uniqueTransactions);
         setFetchedTransactions(true);
@@ -119,7 +126,8 @@ export const LoyaltyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (isFetchingRewards.current) return;
     
     // In development mode, respect the fetchedRewards flag to prevent infinite loops
-    if (DEV_MODE && fetchedRewards) return;
+    // Only block repeated fetches in dev mode if currentUser hasn't changed
+    if (DEV_MODE && fetchedRewards && currentUser) return;
     
     isFetchingRewards.current = true;
     setIsLoading(true);
@@ -147,7 +155,7 @@ export const LoyaltyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }));
         
         // Deduplicate vouchers by id before setting state
-        const uniqueVouchers: Voucher[] = Array.from(new Map(mappedVouchers.map((v: Voucher) => [v.id, v])).values());
+        const uniqueVouchers = Array.from(new Map(mappedVouchers.map((v: Voucher) => [v.id, v])).values()) as Voucher[];
         setVouchers(uniqueVouchers);
         setFetchedRewards(true);
       } else {
@@ -165,15 +173,27 @@ export const LoyaltyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
+  // Listen for route (hash) changes and fetch fresh data on every navigation
+  useEffect(() => {
+    const fetchAll = () => {
+      if (currentUser) {
+        fetchRewards();
+        fetchUserTransactions();
+      } else {
+        setUserTransactions([]);
+        setVouchers([]);
+      }
+    };
+    fetchAll();
+    window.addEventListener('hashchange', fetchAll);
+    return () => window.removeEventListener('hashchange', fetchAll);
+  }, [currentUser]);
+
+  // Fetch data immediately when currentUser becomes available (e.g., after login)
   useEffect(() => {
     if (currentUser) {
-      // Only fetch rewards when user is authenticated
       fetchRewards();
       fetchUserTransactions();
-    } else {
-      setUserTransactions([]);
-      // When not authenticated, set empty vouchers array
-      setVouchers([]);
     }
   }, [currentUser]);
 

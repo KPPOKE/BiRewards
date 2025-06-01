@@ -20,23 +20,51 @@ const UserGrowthTrendsPage: React.FC = () => {
 
   useEffect(() => {
     setLoading(true);
-    // Make sure the API_URL doesn't already end with a slash
     const baseUrl = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
-    fetch(`${baseUrl}/users/owner/user_growth?granularity=${filter}`, {
+    fetch(`${baseUrl}/users/owner/metrics`, {
       headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
       credentials: 'include',
     })
       .then(res => res.json())
       .then(res => {
-        if (res.success) {
-          setChartData(res.data || []);
+        if (res.success && res.data) {
+          const { userGrowth, totalUsers } = res.data;
+          let formattedData: any[] = [];
+          if (filter === 'month' || filter === 'day') {
+            // Use data as-is (monthly)
+            const months = totalUsers.map((u: any) => u.month);
+            formattedData = months.map((month: string) => ({
+              label: month,
+              total_users: Number(totalUsers.find((u: any) => u.month === month)?.total_users || 0),
+              new_users: Number(userGrowth.find((u: any) => u.month === month)?.new_users || 0),
+            }));
+          } else if (filter === 'year') {
+            // Aggregate by year
+            const yearMap: Record<string, { total_users: number; new_users: number }> = {};
+            totalUsers.forEach((u: any) => {
+              const year = u.month.split('-')[0];
+              if (!yearMap[year]) yearMap[year] = { total_users: 0, new_users: 0 };
+              yearMap[year].total_users += Number(u.total_users || 0);
+            });
+            userGrowth.forEach((u: any) => {
+              const year = u.month.split('-')[0];
+              if (!yearMap[year]) yearMap[year] = { total_users: 0, new_users: 0 };
+              yearMap[year].new_users += Number(u.new_users || 0);
+            });
+            formattedData = Object.entries(yearMap).map(([year, vals]) => ({
+              label: year,
+              ...vals,
+            }));
+          }
+          setChartData(formattedData || []);
           setError(null);
         } else {
           setError('Failed to fetch user growth data');
         }
         setLoading(false);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error('Error fetching user growth data:', err);
         setError('Failed to fetch user growth data');
         setLoading(false);
       });
@@ -68,15 +96,37 @@ const UserGrowthTrendsPage: React.FC = () => {
           ) : error ? (
             <div className="text-red-600">{error}</div>
           ) : (
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="label" />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="total_users" stroke="#6366f1" name="Total Users" strokeWidth={2} />
-                <Line type="monotone" dataKey="new_users" stroke="#10b981" name="New Users" strokeWidth={2} />
+            <ResponsiveContainer width="100%" height={340}>
+              <LineChart
+                data={chartData}
+                margin={{ top: 20, right: 40, left: 0, bottom: 10 }}
+              >
+                <CartesianGrid strokeDasharray="4 4" stroke="#e5e7eb" />
+                <XAxis dataKey="label" angle={-30} textAnchor="end" height={60} />
+                <YAxis allowDecimals={false} tickCount={8} domain={[0, 'dataMax + 1']} />
+                <Tooltip
+                  formatter={(value: any) => value.toLocaleString()}
+                  labelStyle={{ fontWeight: 'bold' }}
+                />
+                <Legend verticalAlign="top" height={36} />
+                <Line
+                  type="monotone"
+                  dataKey="total_users"
+                  stroke="#6366f1"
+                  strokeWidth={3}
+                  dot={{ r: 4 }}
+                  name="Total Users"
+                  fillOpacity={0.2}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="new_users"
+                  stroke="#10b981"
+                  strokeWidth={3}
+                  dot={{ r: 4 }}
+                  name="New Users"
+                  fillOpacity={0.2}
+                />
               </LineChart>
             </ResponsiveContainer>
           )}

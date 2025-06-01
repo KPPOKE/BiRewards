@@ -6,7 +6,6 @@ import {
   LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 interface OwnerStats {
   totalUsers: number;
@@ -163,8 +162,8 @@ const OwnerDashboard: React.FC = () => {
               <YAxis allowDecimals={false} />
               <Tooltip />
               <Legend />
-              <Area type="monotone" dataKey="points_issued" stackId="1" stroke="#6366f1" fill="#6366f1" name="Points Issued" />
-              <Area type="monotone" dataKey="points_redeemed" stackId="1" stroke="#f59e42" fill="#f59e42" name="Points Redeemed" />
+              <Area type="monotone" dataKey="points_issued" stroke="#6366f1" fill="#6366f1" name="Points Issued" fillOpacity={0.25} />
+              <Area type="monotone" dataKey="points_redeemed" stroke="#f59e42" fill="#f59e42" name="Points Redeemed" fillOpacity={0.25} />
             </AreaChart>
           </ResponsiveContainer>
         </CardContent>
