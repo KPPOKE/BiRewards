@@ -134,14 +134,21 @@ export const getAvailableRewards = async (req, res, next) => {
   const { userId } = req.params;
 
   try {
-    // Get user info (points and loyalty_tier)
-    const userResult = await pool.query('SELECT points, loyalty_tier FROM users WHERE id = $1', [userId]);
+    // Get user info (points and highest_points)
+    const userResult = await pool.query('SELECT points, highest_points FROM users WHERE id = $1', [userId]);
     if (userResult.rows.length === 0) {
       return next(new AppError('User not found', 404));
     }
 
+    // Helper to determine tier based on highest_points
+    function determineLoyaltyTier(highestPoints) {
+      if (highestPoints >= 1000) return 'Gold';
+      if (highestPoints >= 500) return 'Silver';
+      return 'Bronze';
+    }
+
     const userPoints = userResult.rows[0].points;
-    const userTier = userResult.rows[0].loyalty_tier;
+    const userTier = determineLoyaltyTier(userResult.rows[0].highest_points || 0);
     const tierOrder = { 'Bronze': 1, 'Silver': 2, 'Gold': 3 };
 
     // Get rewards that user can afford and meets tier requirement

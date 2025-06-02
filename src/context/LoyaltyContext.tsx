@@ -210,7 +210,8 @@ export const LoyaltyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (currentUser.points < voucher.pointsCost) return false;
 
       // Call API to redeem voucher
-      const token = (currentUser as any)?.token;
+      const token = localStorage.getItem('token');
+      console.log('Attempting to redeem voucher with token:', token ? 'Token exists' : 'No token');
       const response = await fetch(`${API_URL}/users/${currentUser.id}/redeem`, {
         method: 'POST',
         headers: {
@@ -221,7 +222,18 @@ export const LoyaltyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         body: JSON.stringify({ rewardId: voucherId })
       });
 
+      // Log the raw response for debugging
+      console.log('Redeem voucher response status:', response.status);
+      
+      // Handle non-2xx responses
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to redeem voucher. Status:', response.status, 'Error:', errorText);
+        return false;
+      }
+      
       const data = await response.json();
+      console.log('Redeem voucher response data:', data);
 
       if (data.success) {
         // Refresh transactions to get the latest data

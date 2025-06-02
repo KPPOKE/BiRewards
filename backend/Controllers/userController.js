@@ -149,13 +149,22 @@ export const loginUser = async (req, res, next) => {
     }
     // Remove password from response
     delete user.password;
+    
+    // Map snake_case to camelCase for frontend compatibility
+    const formattedUser = {
+      ...user,
+      loyaltyTier: user.loyalty_tier, // Add camelCase version for frontend
+      highestPoints: user.highest_points // Add camelCase version for frontend
+    };
+    
     // Generate JWT token
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
-    res.json({ success: true, token, data: user });
+    
+    res.json({ success: true, token, data: formattedUser });
   } catch (error) {
     console.error('Error in loginUser:', error);
     next(new AppError(error.message || 'Error logging in', 500));
@@ -258,21 +267,50 @@ export const uploadProfileImage = async (req, res, next) => {
 };
 
 // Get user profile (with image URL)
+// Helper to determine tier based on highest_points
+function determineLoyaltyTier(highestPoints) {
+  if (highestPoints >= 1000) return 'Gold';
+  if (highestPoints >= 500) return 'Silver';
+  return 'Bronze';
+}
+
 export const getUserProfile = async (req, res, next) => {
   const { id } = req.params;
   try {
     const result = await pool.query(
-      'SELECT id, name, email, role, points, profile_image, loyalty_tier, referral_code, referred_by FROM users WHERE id = $1',
+      'SELECT id, name, email, role, points, highest_points, profile_image, loyalty_tier, referral_code, referred_by FROM users WHERE id = $1',
       [id]
     );
     if (result.rows.length === 0) {
       return next(new AppError('User not found', 404));
     }
+    
+    const userData = result.rows[0];
+    
+    // If loyalty_tier is null, calculate it based on highest_points
+    if (userData.loyalty_tier === null) {
+      userData.loyalty_tier = determineLoyaltyTier(userData.highest_points || 0);
+      
+      // Update the user's loyalty_tier in the database
+      await pool.query(
+        'UPDATE users SET loyalty_tier = $1 WHERE id = $2',
+        [userData.loyalty_tier, id]
+      );
+    }
+    
+    // Map snake_case to camelCase for frontend compatibility
+    const formattedUserData = {
+      ...userData,
+      loyaltyTier: userData.loyalty_tier, // Add camelCase version for frontend
+      highestPoints: userData.highest_points // Add camelCase version for frontend
+    };
+    
     res.json({
       success: true,
-      data: result.rows[0]
+      data: formattedUserData
     });
   } catch (error) {
+    console.error('Error in getUserProfile:', error);
     next(new AppError('Error fetching user profile', 500));
   }
 };

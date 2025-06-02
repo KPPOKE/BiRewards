@@ -97,20 +97,33 @@ export const addPoints = async (req, res, next) => {
 
     // Fetch highest_points
     const highestPointsResult = await client.query(
-      'SELECT highest_points, points, loyalty_tier FROM users WHERE id = $1',
+      'SELECT highest_points, points FROM users WHERE id = $1',
       [userId]
     );
-    let { highest_points, points, loyalty_tier } = highestPointsResult.rows[0];
-    let updatedHighestPoints = highest_points;
-    let updatedTier = loyalty_tier;
-    if (points > highest_points) {
+    let { highest_points, points } = highestPointsResult.rows[0];
+    let updatedHighestPoints = highest_points || 0;
+    
+    // FIXED: Always update highest_points if points > updatedHighestPoints
+    if (points > updatedHighestPoints) {
       updatedHighestPoints = points;
-      updatedTier = determineLoyaltyTier(points);
-      await client.query(
-        'UPDATE users SET highest_points = $1, loyalty_tier = $2 WHERE id = $3',
-        [updatedHighestPoints, updatedTier, userId]
-      );
     }
+    
+    // FIXED: Always calculate and set the correct tier based on current points
+    // This ensures tier is always correct regardless of highest_points
+    const correctTier = determineLoyaltyTier(points);
+    
+    // Update both highest_points and loyalty_tier
+    await client.query(
+      'UPDATE users SET highest_points = $1, loyalty_tier = $2, last_tier_update = NOW() WHERE id = $3',
+      [updatedHighestPoints, correctTier, userId]
+    );
+    
+    console.log('DEBUG: Updated user with correct tier:', { 
+      userId, 
+      points, 
+      highest_points: updatedHighestPoints, 
+      correctTier 
+    });
 
     // Try to create transaction record with purchase_amount if available
     let transactionResult;
@@ -198,81 +211,183 @@ export const redeemReward = async (req, res, next) => {
 
   const { userId } = req.params;
   const { rewardId } = req.body;
+  
+  console.log('STEP 1: Redemption request received:', { userId, rewardId, user: req.user });
+  
+  // Validate inputs early
+  if (!userId || !rewardId) {
+    return next(new AppError('Missing required parameters: userId and rewardId are required', 400));
+  }
+
+  let client = null;
+  let user = null;
+  let reward = null;
+  let updateResult = null;
+  let transactionResult = null;
+  let userVoucherResult = null;
 
   try {
+    // Get client from pool for transaction
+    console.log('STEP 2: Getting database connection');
+    client = await pool.connect();
+    
     // Start transaction
-    await pool.query('BEGIN');
+    console.log('STEP 3: Beginning transaction');
+    await client.query('BEGIN');
 
-    // Get user and reward (fetch highest_points and loyalty_tier)
-    const [userResult, rewardResult] = await Promise.all([
-      pool.query('SELECT points, highest_points, loyalty_tier FROM users WHERE id = $1', [userId]),
-      pool.query('SELECT * FROM rewards WHERE id = $1 AND is_active = true', [rewardId])
-    ]);
-
+    // Get user data - do this as a separate query
+    console.log('STEP 4: Fetching user data');
+    const userResult = await client.query(
+      'SELECT id, points, highest_points, loyalty_tier FROM users WHERE id = $1', 
+      [userId]
+    );
+    console.log('User result:', userResult.rows);
+    
     if (userResult.rows.length === 0) {
-      await pool.query('ROLLBACK');
+      await client.query('ROLLBACK');
       return next(new AppError('User not found', 404));
     }
+    user = userResult.rows[0];
+    
+    // Get reward data - do this as a separate query
+    console.log('STEP 5: Fetching reward data');
+    const rewardResult = await client.query(
+      'SELECT * FROM rewards WHERE id = $1 AND is_active = true', 
+      [rewardId]
+    );
+    console.log('Reward result:', rewardResult.rows);
 
     if (rewardResult.rows.length === 0) {
-      await pool.query('ROLLBACK');
+      await client.query('ROLLBACK');
       return next(new AppError('Reward not found or inactive', 404));
     }
+    reward = rewardResult.rows[0];
 
-    const user = userResult.rows[0];
-    const reward = rewardResult.rows[0];
-
+    // Use the stored loyalty_tier from the database, or calculate it if it's null
+    let userTier = user.loyalty_tier || determineLoyaltyTier(user.highest_points);
+    console.log('User tier from database:', userTier);
+    
     // Check if user meets minimum tier requirement
     if (reward.minimum_required_tier) {
-      const userTier = user.loyalty_tier;
       const tierOrder = { 'Bronze': 1, 'Silver': 2, 'Gold': 3 };
+      console.log('Tier check:', { 
+        userTier, 
+        requiredTier: reward.minimum_required_tier, 
+        userTierValue: tierOrder[userTier], 
+        requiredTierValue: tierOrder[reward.minimum_required_tier] 
+      });
+      
       if (tierOrder[userTier] < tierOrder[reward.minimum_required_tier]) {
-        await pool.query('ROLLBACK');
+        await client.query('ROLLBACK');
         return next(new AppError(`This reward requires ${reward.minimum_required_tier} tier.`, 403));
       }
     }
 
     // Check if user has enough points
+    console.log('Points check:', { userPoints: user.points, rewardCost: reward.points_cost });
     if (user.points < reward.points_cost) {
-      await pool.query('ROLLBACK');
+      await client.query('ROLLBACK');
       return next(new AppError('Not enough points to redeem reward', 400));
     }
 
-    // Deduct points and create transaction
-    const [updateResult, transactionResult] = await Promise.all([
-      pool.query(
-        'UPDATE users SET points = points - $1 WHERE id = $2 RETURNING points',
-        [reward.points_cost, userId]
-      ),
-      pool.query(
-        `INSERT INTO transactions 
-         (user_id, type, amount, reward_id, description) 
-         VALUES ($1, 'reward_redeemed', $2, $3, $4) 
-         RETURNING *`,
-        [userId, -reward.points_cost, rewardId, `Redeemed ${reward.title}`]
-      )
-    ]);
-
-    // Insert into user_vouchers
-    const userVoucherResult = await pool.query(
-      `INSERT INTO user_vouchers (user_id, reward_id, redeemed_at) VALUES ($1, $2, NOW()) RETURNING *`,
-      [userId, rewardId]
+    // Deduct points from user but maintain tier based on highest_points
+    console.log('STEP 6: Deducting points from user');
+    updateResult = await client.query(
+      'UPDATE users SET points = points - $1 WHERE id = $2 RETURNING points, highest_points',
+      [reward.points_cost, userId]
     );
+    console.log('Update result:', updateResult.rows);
+    
+    // Ensure loyalty_tier is set based on highest_points
+    const updatedPoints = updateResult.rows[0];
+    const currentTier = determineLoyaltyTier(updatedPoints.highest_points);
+    
+    // Update the loyalty_tier and last_tier_update if needed
+    await client.query(
+      'UPDATE users SET loyalty_tier = $1, last_tier_update = NOW() WHERE id = $2',
+      [currentTier, userId]
+    );
+    console.log('Updated tier based on highest_points:', currentTier);
+    
+    // Create transaction record
+    console.log('STEP 7: Creating transaction record');
+    transactionResult = await client.query(
+      `INSERT INTO transactions 
+       (user_id, type, amount, reward_id, description) 
+       VALUES ($1, 'reward_redeemed', $2, $3, $4) 
+       RETURNING *`,
+      [userId, -reward.points_cost, rewardId, `Redeemed ${reward.title}`]
+    );
+    console.log('Transaction result:', transactionResult.rows);
 
-    await pool.query('COMMIT');
+    // Insert into user_vouchers table
+    console.log('STEP 8: Creating user voucher record');
+    try {
+      userVoucherResult = await client.query(
+        'INSERT INTO user_vouchers (user_id, reward_id, redeemed_at) VALUES ($1, $2, NOW()) RETURNING *',
+        [userId, rewardId]
+      );
+      console.log('User voucher result:', userVoucherResult.rows);
+    } catch (voucherError) {
+      // Log all relevant Postgres error fields
+      console.error('STEP ERROR: Error inserting user voucher:', {
+        message: voucherError.message,
+        detail: voucherError.detail,
+        code: voucherError.code,
+        constraint: voucherError.constraint,
+        table: voucherError.table,
+        column: voucherError.column
+      });
+      console.error('Full error:', voucherError);
+      await client.query('ROLLBACK');
+      return next(new AppError(
+        'Failed to create user voucher: ' +
+        (voucherError.detail || voucherError.message) +
+        (voucherError.code ? ` (code: ${voucherError.code})` : '') +
+        (voucherError.constraint ? ` (constraint: ${voucherError.constraint})` : ''),
+        500
+      ));
+    }
 
+    // Commit the transaction
+    console.log('STEP 9: Committing transaction');
+    await client.query('COMMIT');
+    
+    // Send success response
+    console.log('STEP 10: Transaction committed successfully');
     res.json({
       success: true,
       data: {
         transaction: transactionResult.rows[0],
         newPoints: updateResult.rows[0].points,
         reward: reward,
-        userVoucher: userVoucherResult.rows[0]
+        userVoucher: userVoucherResult ? userVoucherResult.rows[0] : null
       }
     });
   } catch (error) {
-    await pool.query('ROLLBACK');
-    next(new AppError('Error redeeming reward', 500));
+    // Log all relevant Postgres error fields if present
+    console.error('Error in redeemReward:', {
+      message: error.message,
+      detail: error.detail,
+      code: error.code,
+      constraint: error.constraint,
+      table: error.table,
+      column: error.column,
+      stack: error.stack
+    });
+    
+    // Rollback transaction on error
+    try {
+      if (client) await client.query('ROLLBACK');
+    } catch (rollbackError) {
+      console.error('Error during rollback:', rollbackError);
+    }
+    
+    // Send error response
+    next(new AppError(`Error redeeming reward: ${error.detail || error.message}`, 500));
+  } finally {
+    // Always release the client back to the pool
+    if (client) client.release();
   }
 };
 

@@ -226,7 +226,22 @@ const UserDashboard: React.FC = () => {
                   </div>
                 ) : vouchers && vouchers.length > 0 ? (
                   vouchers
-                    .filter(v => v.isActive && v.pointsCost <= (currentUser?.points || 0))
+                    .filter(v => {
+                      // Check if voucher is active and user has enough points
+                      if (!v.isActive || v.pointsCost > (currentUser?.points || 0)) return false;
+                      
+                      // Check tier requirements if present
+                      if (v.minimumRequiredTier) {
+                        const tierOrder = { 'Bronze': 1, 'Silver': 2, 'Gold': 3 };
+                        // Use loyaltyTier from user object, or calculate from highestPoints
+                        const userTier = currentUser?.loyaltyTier || 
+                          ((currentUser?.highestPoints || 0) >= 1000 ? 'Gold' : 
+                          (currentUser?.highestPoints || 0) >= 500 ? 'Silver' : 'Bronze');
+                        return tierOrder[userTier] >= tierOrder[v.minimumRequiredTier];
+                      }
+                      
+                      return true;
+                    })
                     .slice(0, 3)
                     .map((voucher) => (
                       <div key={voucher.id} className="p-3 border border-gray-200 rounded-md">
@@ -268,7 +283,22 @@ const UserDashboard: React.FC = () => {
                   </div>
                 )}
                 
-                {!isLoading && (!vouchers || vouchers.filter(v => v.isActive && v.pointsCost <= (currentUser?.points || 0)).length === 0) && (
+                {!isLoading && (!vouchers || vouchers.filter(v => {
+                  // Check if voucher is active and user has enough points
+                  if (!v.isActive || v.pointsCost > (currentUser?.points || 0)) return false;
+                  
+                  // Check tier requirements if present
+                  if (v.minimumRequiredTier) {
+                    const tierOrder = { 'Bronze': 1, 'Silver': 2, 'Gold': 3 };
+                    // Use loyaltyTier from user object, or calculate from highestPoints
+                    const userTier = currentUser?.loyaltyTier || 
+                      ((currentUser?.highestPoints || 0) >= 1000 ? 'Gold' : 
+                      (currentUser?.highestPoints || 0) >= 500 ? 'Silver' : 'Bronze');
+                    return tierOrder[userTier] >= tierOrder[v.minimumRequiredTier];
+                  }
+                  
+                  return true;
+                }).length === 0) && (
                   <div className="text-center py-6">
                     <Gift size={40} className="mx-auto text-gray-300 mb-2" />
                     <p className="text-gray-500">No rewards available with your current points.</p>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useLoyalty } from '../../context/LoyaltyContext';
 import { Voucher } from '../../types';
@@ -26,7 +26,7 @@ const getTierIcon = (tier: string) => {
 
 const RewardsPage: React.FC = () => {
   const { vouchers, redeemVoucher } = useLoyalty();
-  const { currentUser } = useAuth();
+  const { currentUser, setCurrentUser } = useAuth();
   const [redeemSuccess, setRedeemSuccess] = useState<string | null>(null);
   const [redeemError, setRedeemError] = useState<string | null>(null);
 
@@ -34,9 +34,43 @@ const RewardsPage: React.FC = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
   const [redeemLoading, setRedeemLoading] = useState(false);
+  
+  // Force update the user's loyalty tier based on highest points
+  useEffect(() => {
+    if (currentUser && currentUser.highestPoints) {
+      // Determine the correct tier based on highestPoints
+      let correctTier: 'Bronze' | 'Silver' | 'Gold' = 'Bronze';
+      if (currentUser.highestPoints >= 1000) {
+        correctTier = 'Gold';
+      } else if (currentUser.highestPoints >= 500) {
+        correctTier = 'Silver';
+      }
+      
+      // If the stored tier is different from what it should be, update it
+      if (currentUser.loyaltyTier !== correctTier) {
+        console.log(`Fixing tier: ${currentUser.loyaltyTier} → ${correctTier}`);
+        
+        // Update in memory
+        const updatedUser = {
+          ...currentUser,
+          loyaltyTier: correctTier
+        };
+        
+        // Update in state
+        setCurrentUser(updatedUser);
+        
+        // Update in localStorage
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      }
+    }
+  }, [currentUser, setCurrentUser]);
 
   const points = currentUser?.points || 0;
-  const loyaltyTier = currentUser?.loyaltyTier || (points >= 1000 ? 'Gold' : points >= 500 ? 'Silver' : 'Bronze');
+  const highestPoints = currentUser?.highestPoints ?? 0;
+  const loyaltyTier = currentUser?.loyaltyTier
+  || (highestPoints >= 1000 ? 'Gold'
+      : highestPoints >= 500 ? 'Silver'
+      : 'Bronze');
   let tierColor = 'text-yellow-700'; // bronze (default)
 
   if (loyaltyTier === 'Gold') {
@@ -155,13 +189,39 @@ const RewardsPage: React.FC = () => {
             voucher={voucher} 
             canRedeem={(() => {
               if (!currentUser) return false;
+              
+              // Points check - must have enough points to redeem
+              const hasEnoughPoints = currentUser.points >= voucher.pointsCost;
+              
+              // Tier validation
               const tierOrder = { 'Bronze': 1, 'Silver': 2, 'Gold': 3 };
-              const userTier = loyaltyTier;
+              
+              // IMPORTANT: Force the loyalty tier to be one of the valid tier values to ensure proper mapping
+              // Ensure the user's tier is always one of the three valid tiers for comparison
+              let userTier = 'Bronze';
+              if (loyaltyTier === 'Gold') {
+                userTier = 'Gold';
+              } else if (loyaltyTier === 'Silver') {
+                userTier = 'Silver';
+              }
+              
+              // Get the required tier for this voucher (default to Bronze if not specified)
               const requiredTier = voucher.minimumRequiredTier || 'Bronze';
-              return (
-                currentUser.points >= voucher.pointsCost &&
-                tierOrder[userTier] >= tierOrder[requiredTier]
-              );
+              
+              // Make sure we're only using valid tier values
+              const validUserTier = userTier as 'Bronze' | 'Silver' | 'Gold';
+              const validRequiredTier = requiredTier as 'Bronze' | 'Silver' | 'Gold';
+              
+              // Log for debugging
+              console.log(`Voucher: ${voucher.title}, User Tier: ${validUserTier}, Required Tier: ${validRequiredTier}`);
+              console.log(`User has points: ${currentUser.points}, Required points: ${voucher.pointsCost}`);
+              console.log(`User has tier level: ${tierOrder[validUserTier]}, Needs tier level: ${tierOrder[validRequiredTier]}`);
+              
+              // The user can redeem if they have enough points AND their tier is high enough
+              const canRedeemTier = tierOrder[validUserTier] >= tierOrder[validRequiredTier];
+              console.log(`Can redeem: ${hasEnoughPoints && canRedeemTier} (Points: ${hasEnoughPoints}, Tier: ${canRedeemTier})`);
+              
+              return hasEnoughPoints && canRedeemTier;
             })()}
             userTier={loyaltyTier}
             onRedeem={() => handleRedeemVoucher(voucher)}
