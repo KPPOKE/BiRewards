@@ -44,13 +44,15 @@ export const schemas = {
       title: Joi.string().required().min(2).max(255),
       description: Joi.string().required(),
       points_cost: Joi.number().integer().required().min(1),
-      is_active: Joi.boolean()
+      is_active: Joi.boolean(),
+      minimum_required_tier: Joi.string().valid('Bronze', 'Silver', 'Gold')
     }),
     update: Joi.object({
       title: Joi.string().min(2).max(255),
       description: Joi.string(),
       points_cost: Joi.number().integer().min(1),
-      is_active: Joi.boolean()
+      is_active: Joi.boolean(),
+      minimum_required_tier: Joi.string().valid('Bronze', 'Silver', 'Gold')
     })
   },
   transaction: {

@@ -41,6 +41,13 @@ export const getUserTransactions = async (req, res, next) => {
   }
 };
 
+// Helper to determine tier based on highest_points
+function determineLoyaltyTier(highestPoints) {
+  if (highestPoints >= 1000) return 'Gold';
+  if (highestPoints >= 500) return 'Silver';
+  return 'Bronze';
+}
+
 // Add points to user
 export const addPoints = async (req, res, next) => {
   const { userId } = req.params;
@@ -82,11 +89,28 @@ export const addPoints = async (req, res, next) => {
       return next(new AppError('User not found', 404));
     }
 
-    // Add points to user
+    // Add points to user and fetch new points
     const userResult = await client.query(
       'UPDATE users SET points = points + $1 WHERE id = $2 RETURNING points',
       [pointsToAdd, userId]
     );
+
+    // Fetch highest_points
+    const highestPointsResult = await client.query(
+      'SELECT highest_points, points, loyalty_tier FROM users WHERE id = $1',
+      [userId]
+    );
+    let { highest_points, points, loyalty_tier } = highestPointsResult.rows[0];
+    let updatedHighestPoints = highest_points;
+    let updatedTier = loyalty_tier;
+    if (points > highest_points) {
+      updatedHighestPoints = points;
+      updatedTier = determineLoyaltyTier(points);
+      await client.query(
+        'UPDATE users SET highest_points = $1, loyalty_tier = $2 WHERE id = $3',
+        [updatedHighestPoints, updatedTier, userId]
+      );
+    }
 
     // Try to create transaction record with purchase_amount if available
     let transactionResult;
@@ -165,6 +189,13 @@ export const addPoints = async (req, res, next) => {
 
 // Redeem reward
 export const redeemReward = async (req, res, next) => {
+  // Helper to determine tier based on highest_points (reuse if not global)
+  function determineLoyaltyTier(highestPoints) {
+    if (highestPoints >= 1000) return 'Gold';
+    if (highestPoints >= 500) return 'Silver';
+    return 'Bronze';
+  }
+
   const { userId } = req.params;
   const { rewardId } = req.body;
 
@@ -172,9 +203,9 @@ export const redeemReward = async (req, res, next) => {
     // Start transaction
     await pool.query('BEGIN');
 
-    // Get user and reward
+    // Get user and reward (fetch highest_points and loyalty_tier)
     const [userResult, rewardResult] = await Promise.all([
-      pool.query('SELECT points FROM users WHERE id = $1', [userId]),
+      pool.query('SELECT points, highest_points, loyalty_tier FROM users WHERE id = $1', [userId]),
       pool.query('SELECT * FROM rewards WHERE id = $1 AND is_active = true', [rewardId])
     ]);
 
@@ -190,6 +221,16 @@ export const redeemReward = async (req, res, next) => {
 
     const user = userResult.rows[0];
     const reward = rewardResult.rows[0];
+
+    // Check if user meets minimum tier requirement
+    if (reward.minimum_required_tier) {
+      const userTier = user.loyalty_tier;
+      const tierOrder = { 'Bronze': 1, 'Silver': 2, 'Gold': 3 };
+      if (tierOrder[userTier] < tierOrder[reward.minimum_required_tier]) {
+        await pool.query('ROLLBACK');
+        return next(new AppError(`This reward requires ${reward.minimum_required_tier} tier.`, 403));
+      }
+    }
 
     // Check if user has enough points
     if (user.points < reward.points_cost) {

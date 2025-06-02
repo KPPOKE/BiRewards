@@ -4,6 +4,8 @@ export interface User {
   email: string;
   role: 'user' | 'admin' | 'owner' | 'manager' | 'cashier' | 'waiter';
   points: number;
+  loyaltyTier?: 'Bronze' | 'Silver' | 'Gold';
+  highestPoints?: number;
   createdAt: string;
   token?: string;
 }
@@ -15,6 +17,7 @@ export type Voucher = {
   pointsCost: number;
   expiryDays: number;
   isActive: boolean;
+  minimumRequiredTier?: 'Bronze' | 'Silver' | 'Gold';
 };
 
 export type Transaction = {

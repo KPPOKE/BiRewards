@@ -2,6 +2,7 @@ import express from 'express';
 import pool from '../db.js';
 import AppError from '../utils/AppError.js';
 import { protect, authorize } from '../middleware/auth.js';
+import { createActivityLog } from '../Controllers/activityLogController.js';
 
 const router = express.Router();
 
@@ -9,7 +10,7 @@ const router = express.Router();
 router.use(protect);
 
 // Simple direct endpoint for adding points
-router.post('/add-points/:userId', authorize('admin', 'manager', 'cashier'), async (req, res, next) => {
+router.post('/add-points/:userId', authorize('admin', 'manager', 'cashier', 'waiter'), async (req, res, next) => {
   const { userId } = req.params;
   const { amount, description } = req.body;
 
@@ -57,6 +58,21 @@ router.post('/add-points/:userId', authorize('admin', 'manager', 'cashier'), asy
 
     // Commit the transaction
     await client.query('COMMIT');
+
+    // Create activity log
+    try {
+      await createActivityLog({
+        actor_id: req.user.id,
+        actor_role: req.user.role,
+        target_id: userId,
+        target_role: 'user',
+        description: description || `Added ${pointsToAdd} points`,
+        points_added: pointsToAdd
+      }, client);
+    } catch (logError) {
+      console.error('Failed to create activity log:', logError);
+      // Don't fail the transaction if logging fails
+    }
 
     // Return success response
     res.json({

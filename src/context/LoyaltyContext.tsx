@@ -151,7 +151,8 @@ export const LoyaltyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           description: item.description,
           pointsCost: item.points_cost,
           expiryDays: item.expiry_days,
-          isActive: typeof item.is_active === 'boolean' ? item.is_active : item.is_active === 1
+          isActive: typeof item.is_active === 'boolean' ? item.is_active : item.is_active === 1,
+          minimumRequiredTier: item.minimum_required_tier || 'Bronze'
         }));
         
         // Deduplicate vouchers by id before setting state

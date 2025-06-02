@@ -100,7 +100,7 @@ const WaiterDashboard: React.FC = () => {
     }
     // TODO: Replace with real API after backend
     try {
-      const res = await fetch(`${API_URL}/users/${foundUser.id}/points`, {
+      const res = await fetch(`${API_URL}/add-points/${foundUser.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
         credentials: 'include',

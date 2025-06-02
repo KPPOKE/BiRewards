@@ -1,12 +1,28 @@
 import React, { useState } from 'react';
-import { useLoyalty } from '../../context/LoyaltyContext';
 import { useAuth } from '../../context/AuthContext';
-import Card, { CardHeader, CardTitle, CardContent, CardFooter } from '../ui/Card';
-import Button from '../ui/Button';
-import ConfirmModal from '../ui/ConfirmModal';
-import Badge from '../ui/Badge';
-import { Award, Gift, Info, AlertTriangle } from 'lucide-react';
+import { useLoyalty } from '../../context/LoyaltyContext';
 import { Voucher } from '../../types';
+import Card, { CardHeader, CardTitle, CardContent, CardFooter } from '../ui/Card';
+import Badge from '../ui/Badge';
+import Button from '../ui/Button';
+import { Gift, Info, AlertTriangle, Award } from 'lucide-react';
+import ConfirmModal from '../ui/ConfirmModal';
+
+// Helper functions for tier badges
+const getTierStyles = (tier: string): string => {
+  switch (tier) {
+    case 'Gold':
+      return 'bg-amber-100 text-amber-800 border border-amber-300';
+    case 'Silver':
+      return 'bg-gray-100 text-gray-700 border border-gray-300';
+    default: // Bronze
+      return 'bg-orange-100 text-orange-800 border border-orange-300';
+  }
+};
+
+const getTierIcon = (tier: string) => {
+  return <Award size={14} className={tier === 'Gold' ? 'text-amber-600' : tier === 'Silver' ? 'text-gray-500' : 'text-orange-600'} />;
+};
 
 const RewardsPage: React.FC = () => {
   const { vouchers, redeemVoucher } = useLoyalty();
@@ -20,12 +36,13 @@ const RewardsPage: React.FC = () => {
   const [redeemLoading, setRedeemLoading] = useState(false);
 
   const points = currentUser?.points || 0;
+  const loyaltyTier = currentUser?.loyaltyTier || (points >= 1000 ? 'Gold' : points >= 500 ? 'Silver' : 'Bronze');
   let tierColor = 'text-yellow-700'; // bronze (default)
 
-  if (points >= 1000) {
-    tierColor = 'text-yellow-500'; // gold
-  } else if (points >= 500) {
-    tierColor = 'text-gray-500'; // silver
+  if (loyaltyTier === 'Gold') {
+    tierColor = 'text-yellow-500';
+  } else if (loyaltyTier === 'Silver') {
+    tierColor = 'text-gray-500';
   }
 
   // Only open the modal, don't redeem yet
@@ -136,7 +153,17 @@ const RewardsPage: React.FC = () => {
           <RewardCard 
             key={voucher.id} 
             voucher={voucher} 
-            canRedeem={currentUser ? currentUser.points >= voucher.pointsCost : false}
+            canRedeem={(() => {
+              if (!currentUser) return false;
+              const tierOrder = { 'Bronze': 1, 'Silver': 2, 'Gold': 3 };
+              const userTier = loyaltyTier;
+              const requiredTier = voucher.minimumRequiredTier || 'Bronze';
+              return (
+                currentUser.points >= voucher.pointsCost &&
+                tierOrder[userTier] >= tierOrder[requiredTier]
+              );
+            })()}
+            userTier={loyaltyTier}
             onRedeem={() => handleRedeemVoucher(voucher)}
           />
         ))}
@@ -167,18 +194,32 @@ const RewardsPage: React.FC = () => {
 interface RewardCardProps {
   voucher: Voucher;
   canRedeem: boolean;
+  userTier: 'Bronze' | 'Silver' | 'Gold';
   onRedeem: () => void;
 }
 
-const RewardCard: React.FC<RewardCardProps> = ({ voucher, canRedeem, onRedeem }) => {
+const RewardCard: React.FC<RewardCardProps> = ({ voucher, canRedeem, userTier, onRedeem }) => {
+  const tierOrder = { 'Bronze': 1, 'Silver': 2, 'Gold': 3 };
+  const requiredTier = voucher.minimumRequiredTier || 'Bronze';
+  const belowTier = tierOrder[userTier] < tierOrder[requiredTier];
   return (
     <Card className={`transition-all duration-200 ${!voucher.isActive ? 'opacity-60' : canRedeem ? 'hover:shadow-lg' : ''}`} hoverEffect={voucher.isActive && canRedeem}>
       <CardHeader>
         <div className="flex justify-between items-start">
           <CardTitle>{voucher.title}</CardTitle>
-          <Badge className="bg-transparent text-gray-700 font-semibold shadow-none" size="lg">
-            {voucher.pointsCost} pts
-          </Badge>
+          <div className="flex flex-col items-end">
+            <Badge className="bg-transparent text-gray-700 font-semibold shadow-none" size="lg">
+              {voucher.pointsCost} pts
+            </Badge>
+            <div className="flex items-center mt-2">
+              <Badge 
+                className={`px-2 py-1 rounded-full flex items-center gap-1.5 ${getTierStyles(voucher.minimumRequiredTier || 'Bronze')}`}
+              >
+                {getTierIcon(voucher.minimumRequiredTier || 'Bronze')}
+                <span>{voucher.minimumRequiredTier || 'Bronze'}</span>
+              </Badge>
+            </div>
+          </div>
         </div>
       </CardHeader>
       
@@ -188,6 +229,12 @@ const RewardCard: React.FC<RewardCardProps> = ({ voucher, canRedeem, onRedeem })
           <Info size={14} className="mr-1" />
           Valid for {voucher.expiryDays} days after redemption
         </div>
+        {belowTier && (
+          <div className="text-xs text-red-600 flex items-center mt-2">
+            <AlertTriangle size={14} className="mr-1" />
+            This reward can only be claimed once you reach {voucher.minimumRequiredTier} tier.
+          </div>
+        )}
       </CardContent>
       
       <CardFooter>
@@ -198,7 +245,11 @@ const RewardCard: React.FC<RewardCardProps> = ({ voucher, canRedeem, onRedeem })
           onClick={onRedeem}
           leftIcon={<Gift size={16} />}
         >
-          {canRedeem ? 'Redeem Now' : `Not Enough Points`}
+          {canRedeem
+            ? 'Redeem Now'
+            : belowTier
+              ? `Tier Too Low`
+              : `Not Enough Points`}
         </Button>
       </CardFooter>
     </Card>

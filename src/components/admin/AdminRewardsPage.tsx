@@ -31,39 +31,44 @@ const AdminRewardsPage: React.FC = () => {
     pointsCost: 100,
     expiryDays: 30,
     isActive: true,
+    minimumRequiredTier: 'Bronze' as 'Bronze' | 'Silver' | 'Gold',
   });
 
-  useEffect(() => {
-    const fetchVouchers = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const token = localStorage.getItem('token');
-        const res = await fetch('http://localhost:3000/api/rewards', {
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-          },
-          credentials: 'include',
-        });
-        const data = await res.json();
-        if (data.success) {
-          setVouchers(
-            data.data.map((item: any) => ({
-              ...item,
-              pointsCost: item.points_cost,
-              isActive: item.is_active,
-              expiryDays: item.expiry_days,
-            }))
-          );
-        } else {
-          setError('Failed to fetch rewards');
-        }
-      } catch (err) {
+  // Function to fetch vouchers/rewards
+  const fetchVouchers = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:3000/api/rewards', {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data.success) {
+        setVouchers(
+          data.data.map((item: any) => ({
+            ...item,
+            pointsCost: item.points_cost,
+            isActive: item.is_active,
+            expiryDays: item.expiry_days,
+            minimumRequiredTier: item.minimum_required_tier as 'Bronze' | 'Silver' | 'Gold',
+          }))
+        );
+      } else {
         setError('Failed to fetch rewards');
       }
-      setLoading(false);
-    };
+    } catch (err) {
+      setError('Failed to fetch rewards');
+    }
+    setLoading(false);
+  };
+
+  // Initial fetch on component mount
+  useEffect(() => {
     fetchVouchers();
   }, []);
 
@@ -73,7 +78,7 @@ const AdminRewardsPage: React.FC = () => {
     voucher.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleAddVoucher = () => {
+  const handleAddVoucher = async () => {
     // Simple validation
     if (!newVoucher.title || !newVoucher.description) {
       alert('Title and description are required');
@@ -90,26 +95,45 @@ const AdminRewardsPage: React.FC = () => {
       return;
     }
 
-    // Create new voucher with generated ID
-    const newVoucherObj: Voucher = {
-      id: `${vouchers.length + 1}`,
-      ...newVoucher,
-    };
+    // Send to backend
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:3000/api/rewards', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          title: newVoucher.title,
+          description: newVoucher.description,
+          points_cost: newVoucher.pointsCost,
+          is_active: newVoucher.isActive,
+          minimum_required_tier: newVoucher.minimumRequiredTier,
+        }),
+      });
+      if (!res.ok) throw new Error('Failed to create reward');
+      
+      // Success! Refresh the rewards list
+      await fetchVouchers();
+      alert('Reward created successfully!');
+    } catch (err) {
+      alert('Failed to create reward');
+    }
 
-    setVouchers([...vouchers, newVoucherObj]);
     setShowAddModal(false);
-    
-    // Reset form
     setNewVoucher({
       title: '',
       description: '',
       pointsCost: 100,
       expiryDays: 30,
       isActive: true,
+      minimumRequiredTier: 'Bronze',
     });
   };
 
-  const handleEditVoucher = () => {
+  const handleEditVoucher = async () => {
     if (!currentVoucher) return;
     
     // Simple validation
@@ -118,24 +142,50 @@ const AdminRewardsPage: React.FC = () => {
       return;
     }
 
-    if (currentVoucher.pointsCost <= 0) {
+    // Safely check pointsCost with fallback to 0
+    const pointsCost = currentVoucher.pointsCost || 0;
+    if (pointsCost <= 0) {
       alert('Points cost must be greater than 0');
       return;
     }
 
-    if (currentVoucher.expiryDays <= 0) {
+    // Safely check expiryDays with fallback to 0
+    const expiryDays = currentVoucher.expiryDays || 0;
+    if (expiryDays <= 0) {
       alert('Expiry days must be greater than 0');
       return;
     }
 
-    // Update voucher
-    const updatedVouchers = vouchers.map(voucher => 
-      voucher.id === currentVoucher.id ? currentVoucher : voucher
-    );
+    // Send to backend
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:3000/api/rewards/${currentVoucher.id}`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          title: currentVoucher.title,
+          description: currentVoucher.description,
+          points_cost: currentVoucher.pointsCost,
+          is_active: currentVoucher.isActive,
+          minimum_required_tier: currentVoucher.minimumRequiredTier,
+        }),
+      });
+      if (!res.ok) throw new Error('Failed to update reward');
+      
+      // Success! Refresh the rewards list
+      await fetchVouchers();
+      alert('Reward updated successfully!');
+    } catch (err) {
+      alert('Failed to update reward');
+    }
 
-    setVouchers(updatedVouchers);
     setShowEditModal(false);
     setCurrentVoucher(null);
+    // Optionally: refetch rewards here
   };
 
   const handleEditClick = (voucher: Voucher) => {
@@ -156,17 +206,22 @@ const AdminRewardsPage: React.FC = () => {
     if (!currentVoucher) return;
     if (!window.confirm(`Are you sure you want to delete reward '${currentVoucher.title}'? This action cannot be undone.`)) return;
     try {
-      const res = await fetch(`/api/rewards/${currentVoucher.id}`, {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:3000/api/rewards/${currentVoucher.id}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         credentials: 'include',
       });
       if (res.ok) {
-        setVouchers(vouchers.filter(v => v.id !== currentVoucher.id));
-        setShowEditModal(false);
+        // Refresh the rewards list
+        await fetchVouchers();
+        alert('Reward deleted successfully!');
         setCurrentVoucher(null);
       } else {
-        alert('Failed to delete reward.');
+        alert('Failed to delete reward');
       }
     } catch (err) {
       alert('Failed to delete reward.');
@@ -222,6 +277,7 @@ const AdminRewardsPage: React.FC = () => {
                       <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">Description</th>
                       <th className="text-center py-3 px-4 font-medium text-gray-600 text-sm">Points Cost</th>
                       <th className="text-center py-3 px-4 font-medium text-gray-600 text-sm">Expiry</th>
+                      <th className="text-center py-3 px-4 font-medium text-gray-600 text-sm">Required Tier</th>
                       <th className="text-center py-3 px-4 font-medium text-gray-600 text-sm">Status</th>
                       <th className="text-right py-3 px-4 font-medium text-gray-600 text-sm">Actions</th>
                     </tr>
@@ -250,6 +306,11 @@ const AdminRewardsPage: React.FC = () => {
                             <Calendar size={14} className="mr-2 text-gray-400" />
                             {voucher.expiryDays} days
                           </div>
+                        </td>
+                        <td className="py-3 px-4 text-center font-medium">
+                          <Badge variant="secondary">
+                            {voucher.minimumRequiredTier || 'Bronze'}
+                          </Badge>
                         </td>
                         <td className="py-3 px-4 text-center">
                           <button
@@ -344,6 +405,18 @@ const AdminRewardsPage: React.FC = () => {
                 fullWidth
                 required
               />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Minimum Required Tier</label>
+                <select
+                  className="block w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  value={newVoucher.minimumRequiredTier}
+                  onChange={e => setNewVoucher({...newVoucher, minimumRequiredTier: e.target.value as 'Bronze' | 'Silver' | 'Gold'})}
+                >
+                  <option value="Bronze">Bronze</option>
+                  <option value="Silver">Silver</option>
+                  <option value="Gold">Gold</option>
+                </select>
+              </div>
               <Input
                 label="Expiry Days"
                 type="number"
@@ -422,16 +495,28 @@ const AdminRewardsPage: React.FC = () => {
                 label="Points Cost"
                 type="number"
                 placeholder="Required points"
-                value={currentVoucher.pointsCost.toString()}
+                value={(currentVoucher.pointsCost || 0).toString()}
                 onChange={(e) => setCurrentVoucher({...currentVoucher, pointsCost: parseInt(e.target.value) || 0})}
                 fullWidth
                 required
               />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Minimum Required Tier</label>
+                <select
+                  className="block w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  value={currentVoucher.minimumRequiredTier}
+                  onChange={e => setCurrentVoucher({...currentVoucher, minimumRequiredTier: e.target.value as 'Bronze' | 'Silver' | 'Gold'})}
+                >
+                  <option value="Bronze">Bronze</option>
+                  <option value="Silver">Silver</option>
+                  <option value="Gold">Gold</option>
+                </select>
+              </div>
               <Input
                 label="Expiry Days"
                 type="number"
                 placeholder="Days until expiry after redemption"
-                value={currentVoucher.expiryDays.toString()}
+                value={(currentVoucher.expiryDays || 0).toString()}
                 onChange={(e) => setCurrentVoucher({...currentVoucher, expiryDays: parseInt(e.target.value) || 0})}
                 fullWidth
                 required
