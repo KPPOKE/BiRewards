@@ -18,6 +18,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import supportTicketRoutes from './routes/supportTickets.js';
 import activityLogRoutes from './routes/activityLogRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
+import { fixAllUserTiers } from './utils/fixUserTiers.js';
 
 // Get current directory
 const __filename = fileURLToPath(import.meta.url);
@@ -105,6 +107,7 @@ app.use('/api-docs', apiDocsRoutes);
 app.use('/api/support-tickets', supportTicketRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api', activityLogRoutes);
+app.use('/api/admin', adminRoutes); // Register the admin routes
 
 // Serve uploads directory for profile images
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
@@ -125,7 +128,16 @@ app.use((req, res) => {
 
 // Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📝 API Documentation: http://localhost:${PORT}/api-docs`);
+  
+  // Fix all user tiers on startup
+  try {
+    console.log('Running automatic tier fix on startup...');
+    const result = await fixAllUserTiers();
+    console.log('Tier fix result:', result);
+  } catch (error) {
+    console.error('Error running tier fix on startup:', error);
+  }
 });

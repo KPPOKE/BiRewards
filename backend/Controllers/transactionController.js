@@ -48,6 +48,16 @@ function determineLoyaltyTier(highestPoints) {
   return 'Bronze';
 }
 
+// Helper to get tier ID from tier name
+function getTierIdFromName(tierName) {
+  switch (tierName) {
+    case 'Gold': return 3;
+    case 'Silver': return 2;
+    case 'Bronze': return 1;
+    default: return 1;
+  }
+}
+
 // Add points to user
 export const addPoints = async (req, res, next) => {
   const { userId } = req.params;
@@ -104,25 +114,28 @@ export const addPoints = async (req, res, next) => {
     let updatedHighestPoints = highest_points || 0;
     
     // FIXED: Always update highest_points if points > updatedHighestPoints
+    // highest_points should only ever increase, never decrease
     if (points > updatedHighestPoints) {
       updatedHighestPoints = points;
     }
     
-    // FIXED: Always calculate and set the correct tier based on current points
-    // This ensures tier is always correct regardless of highest_points
-    const correctTier = determineLoyaltyTier(points);
+    // FIXED: Calculate tier based on highest_points, not current points
+    // This ensures tier is based on user's best achievement
+    const correctTier = determineLoyaltyTier(updatedHighestPoints);
+    const tierId = getTierIdFromName(correctTier);
     
-    // Update both highest_points and loyalty_tier
+    // Update highest_points, loyalty_tier, and tier_id
     await client.query(
-      'UPDATE users SET highest_points = $1, loyalty_tier = $2, last_tier_update = NOW() WHERE id = $3',
-      [updatedHighestPoints, correctTier, userId]
+      'UPDATE users SET highest_points = $1, loyalty_tier = $2, tier_id = $3, last_tier_update = NOW() WHERE id = $4',
+      [updatedHighestPoints, correctTier, tierId, userId]
     );
     
     console.log('DEBUG: Updated user with correct tier:', { 
       userId, 
       points, 
       highest_points: updatedHighestPoints, 
-      correctTier 
+      correctTier,
+      tierId 
     });
 
     // Try to create transaction record with purchase_amount if available
@@ -298,16 +311,20 @@ export const redeemReward = async (req, res, next) => {
     );
     console.log('Update result:', updateResult.rows);
     
-    // Ensure loyalty_tier is set based on highest_points
+    // IMPORTANT: When redeeming, we maintain the tier based on highest_points
+    // This ensures users don't lose tier status when spending points
     const updatedPoints = updateResult.rows[0];
-    const currentTier = determineLoyaltyTier(updatedPoints.highest_points);
     
-    // Update the loyalty_tier and last_tier_update if needed
+    // NEVER recalculate tier based on current points - always use highest_points
+    const currentTier = determineLoyaltyTier(updatedPoints.highest_points);
+    const tierId = getTierIdFromName(currentTier);
+    
+    // Update both loyalty_tier and tier_id to ensure consistency
     await client.query(
-      'UPDATE users SET loyalty_tier = $1, last_tier_update = NOW() WHERE id = $2',
-      [currentTier, userId]
+      'UPDATE users SET loyalty_tier = $1, tier_id = $2, last_tier_update = NOW() WHERE id = $3',
+      [currentTier, tierId, userId]
     );
-    console.log('Updated tier based on highest_points:', currentTier);
+    console.log('Maintained tier based on highest_points:', { currentTier, tierId, highest_points: updatedPoints.highest_points });
     
     // Create transaction record
     console.log('STEP 7: Creating transaction record');
