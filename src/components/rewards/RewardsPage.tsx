@@ -25,7 +25,7 @@ const getTierIcon = (tier: string) => {
 };
 
 const RewardsPage: React.FC = () => {
-  const { vouchers, redeemVoucher } = useLoyalty();
+  const { vouchers } = useLoyalty();
   const { currentUser, setCurrentUser } = useAuth();
   const [redeemSuccess, setRedeemSuccess] = useState<string | null>(null);
   const [redeemError, setRedeemError] = useState<string | null>(null);
@@ -101,16 +101,45 @@ const RewardsPage: React.FC = () => {
         setSelectedVoucher(null);
         return;
       }
-      const success = await redeemVoucher(selectedVoucher.id);
+      
+      // Create a redeem request instead of direct redemption
+      const response = await fetch('http://localhost:3000/api/redeem-requests/redeem', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          reward_id: selectedVoucher.id,
+          points_to_use: selectedVoucher.pointsCost
+        })
+      });
+      
+      const data = await response.json();
       setRedeemLoading(false);
       setConfirmOpen(false);
       setSelectedVoucher(null);
-      if (success) {
-        setRedeemSuccess(`You've successfully redeemed ${selectedVoucher.title}!`);
+      
+      if (data.success) {
+        // Update user points in local state
+        if (currentUser) {
+          const updatedUser = {
+            ...currentUser,
+            points: currentUser.points - selectedVoucher.pointsCost
+          };
+          setCurrentUser(updatedUser);
+          localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+        }
+        
+        setRedeemSuccess(`Reward redemption request created! A manager will review your request shortly.`);
         setRedeemError(null);
-        setTimeout(() => setRedeemSuccess(null), 3000);
+        setTimeout(() => {
+          setRedeemSuccess(null);
+          // Redirect to redeem requests page to see status
+          window.location.hash = 'redeem-requests';
+        }, 3000);
       } else {
-        setRedeemError('Failed to redeem voucher. Please try again.');
+        setRedeemError(data.message || 'Failed to create redemption request. Please try again.');
         setRedeemSuccess(null);
         setTimeout(() => setRedeemError(null), 3000);
       }
@@ -232,13 +261,31 @@ const RewardsPage: React.FC = () => {
       {/* Confirmation Modal */}
       <ConfirmModal
         open={confirmOpen}
-        title="Confirm Redemption"
-        description={selectedVoucher ? `Are you sure you want to redeem "${selectedVoucher.title}" for ${selectedVoucher.pointsCost} points? This action cannot be undone.` : ''}
-        confirmText={redeemLoading ? 'Processing...' : 'Yes, Redeem'}
-        cancelText="Cancel"
-        onConfirm={handleConfirmRedeem}
         onCancel={() => { setConfirmOpen(false); setSelectedVoucher(null); }}
-      />
+        onConfirm={handleConfirmRedeem}
+        title="Request Reward Redemption"
+        confirmText={redeemLoading ? 'Processing...' : 'Submit Request'}
+      >
+        {selectedVoucher && (
+          <div className="space-y-4">
+            <p>
+              Are you sure you want to request <strong>{selectedVoucher.title}</strong> for <strong>{selectedVoucher.pointsCost} points</strong>?
+            </p>
+            <div className="p-3 bg-gray-100 rounded-md">
+              <div className="text-sm font-medium text-gray-500">Current points balance:</div>
+              <div className="text-lg font-medium">{points} points</div>
+              <div className="text-sm font-medium text-gray-500 mt-2">Points after redemption:</div>
+              <div className="text-lg font-medium">{points - (selectedVoucher?.pointsCost || 0)} points</div>
+            </div>
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
+              <p className="text-sm text-amber-700">
+                <span className="font-medium">Note:</span> Your points will be reserved while your request is reviewed by a manager. 
+                If approved, you'll receive a voucher. If rejected, your points will be refunded.
+              </p>
+            </div>
+          </div>
+        )}
+      </ConfirmModal>
 
       {vouchers.length === 0 && (
         <div className="text-center py-12">
@@ -306,7 +353,7 @@ const RewardCard: React.FC<RewardCardProps> = ({ voucher, canRedeem, userTier, o
           leftIcon={<Gift size={16} />}
         >
           {canRedeem
-            ? 'Redeem Now'
+            ? 'Request Now'
             : belowTier
               ? `Tier Too Low`
               : `Not Enough Points`}

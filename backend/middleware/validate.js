@@ -63,5 +63,15 @@ export const schemas = {
     redeemReward: Joi.object({
       rewardId: Joi.number().integer().required().min(1)
     })
+  },
+  // New schema for redeem requests
+  redeem: {
+    create: Joi.object({
+      reward_id: Joi.number().integer().required().min(1)
+    }),
+    process: Joi.object({
+      action: Joi.string().required().valid('approve', 'reject'),
+      notes: Joi.string().allow('', null)
+    })
   }
 }; 

@@ -124,6 +124,7 @@ const [notifications, setNotifications] = useState<Notification[]>([]);
   let navigation = [
     { name: 'Dashboard', href: 'dashboard', icon: Home, show: true },
     { name: 'Rewards', href: 'rewards', icon: Gift, show: canManageRewards(userRole) || userRole === 'user' },
+    { name: 'Redeem Requests', href: 'redeem-requests', icon: Gift, show: userRole === 'user' || userRole === 'manager' },
     { name: 'Transactions', href: 'transactions', icon: Clock, show: canManagePoints(userRole) || userRole === 'user' },
     { name: 'Support Tickets', href: 'support-tickets', icon: Bell, show: userRole === 'user' },
     { name: 'Support Center', href: 'admin/support', icon: MessageCircle, show: userRole === 'admin' || userRole === 'manager' },
@@ -156,6 +157,7 @@ const [notifications, setNotifications] = useState<Notification[]>([]);
   else if (userRole === 'manager') {
     navigation = [
       { name: 'Dashboard', href: 'dashboard', icon: Home, show: true },
+      { name: 'Redeem Requests', href: 'redeem-requests', icon: Gift, show: true },
       { name: 'Top Users Performance', href: 'top-users', icon: Users, show: true },
       { name: 'Activity Logs', href: 'activity-logs', icon: Clock, show: true },
       { name: 'Support Center', href: 'admin/support', icon: MessageCircle, show: true },

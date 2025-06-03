@@ -19,6 +19,7 @@ import { fileURLToPath } from 'url';
 import supportTicketRoutes from './routes/supportTickets.js';
 import activityLogRoutes from './routes/activityLogRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import redeemRequestRoutes from './routes/redeemRequests.js';
 import { fixAllUserTiers } from './utils/fixUserTiers.js';
 
 // Get current directory
@@ -108,6 +109,7 @@ app.use('/api/support-tickets', supportTicketRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api', activityLogRoutes);
 app.use('/api/admin', adminRoutes); // Register the admin routes
+app.use('/api/redeem-requests', redeemRequestRoutes); // Register the redeem requests routes
 
 // Serve uploads directory for profile images
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));

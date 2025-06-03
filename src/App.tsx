@@ -22,6 +22,8 @@ import ActivityLogsPage from './components/dashboard/ActivityLogsPage';
 import UserGrowthTrendsPage from './components/dashboard/UserGrowthTrendsPage';
 import PointsTransactionOverviewPage from './components/dashboard/PointsTransactionOverviewPage';
 import OwnerTopUsersPage from './components/dashboard/OwnerTopUsersPage';
+import UserRedeemRequestsPage from './components/redeemRequests/UserRedeemRequestsPage';
+import ManagerRedeemRequestsPage from './components/redeemRequests/ManagerRedeemRequestsPage';
 
 import { Award } from 'lucide-react';
 
@@ -112,6 +114,8 @@ const AppContent: React.FC = () => {
             return <ActivityLogsPage />;
           case 'admin/support':
             return <AdminSupportPage />;
+          case 'redeem-requests':
+            return <ManagerRedeemRequestsPage />;
           default:
             return <ManagerDashboard />;
         }
@@ -152,6 +156,8 @@ const AppContent: React.FC = () => {
             return <UserProfilePage />;
           case 'support-tickets':
             return <SupportTicketsPage />;
+          case 'redeem-requests':
+            return <UserRedeemRequestsPage />;
           default:
             return <UserDashboard />;
         }
