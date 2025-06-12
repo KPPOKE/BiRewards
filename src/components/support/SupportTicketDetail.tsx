@@ -1,6 +1,8 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { MessageCircle, AlertCircle, X, Send, Clock, User, RefreshCw, Paperclip, Shield } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '../../utils/api';
 
 interface Message {
   id: string;
@@ -32,162 +34,109 @@ interface Props {
 const SupportTicketDetail: React.FC<Props> = ({ ticket, onClose, onUpdate }) => {
   const { currentUser } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [loading, setLoading] = useState(false);
   const [reply, setReply] = useState('');
-  const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [messagesLoaded, setMessagesLoaded] = useState(false);
-  
-  // Use a ref to track ongoing requests and prevent duplicates
-  const requestInProgressRef = useRef(false);
-  
-  // Check if user is admin or manager
-  const isAuthorized = currentUser?.role === 'admin' || currentUser?.role === 'manager';
-  
-  // For API access purposes, treat manager exactly like admin
-  const effectiveRole = isAuthorized ? 'admin' : 'user';
 
-  // Improved fetch messages function with request deduplication
-  const fetchMessages = useCallback(async () => {
-    // Prevent concurrent requests for the same data
-    if (requestInProgressRef.current || loading) {
-      console.log('Request already in progress, skipping duplicate call');
-      return;
+  // Determine role headers
+  const isStaffUser = currentUser?.role === 'admin' || currentUser?.role === 'manager';
+
+  const getRoleHeaders = () => (isStaffUser ? { 'X-User-Role': 'admin' } : undefined);
+
+  // React Query setup
+  const queryClient = useQueryClient();
+
+  type MessagesResponse = { messages: Message[] };
+
+  const {
+    data,
+    isPending,
+    isFetching,
+    error: queryError,
+    refetch
+  } = useQuery<MessagesResponse, Error, MessagesResponse>({
+    queryKey: ['ticketMessages', ticket.id],
+    queryFn: async (): Promise<MessagesResponse> => (
+      await api.get(`/support-tickets/${ticket.id}/messages`, { headers: getRoleHeaders() })
+    ) as MessagesResponse,
+    enabled: false, // manually triggered
+    retry: 1
+  });
+
+  useEffect(() => {
+    if (queryError) {
+      setError(queryError.message);
+      setMessagesLoaded(true);
     }
-    
-    requestInProgressRef.current = true;
-    setLoading(true);
-    setError('');
-    
-    try {
-      const ticketId = String(ticket.id);
-      const endpoint = 'http://localhost:3000/api/support-tickets';
-      // Use dedicated messages endpoint 
-      const url = `${endpoint}/${ticketId}/messages`;
-      
-      console.log('Fetching messages once for ticket:', ticketId);
-      
-      const res = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${currentUser?.token}`,
-          'X-User-Role': effectiveRole,
-          'Content-Type': 'application/json',
-          // Prevent browser caching with unique timestamp
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache'
-        }
-      });
-      
-      if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
-      
-      const data = await res.json();
-      
-      console.log('Messages received from API:', data);
-      
-      // Check if component is still mounted before updating state
-      if (Array.isArray(data.messages)) {
-        // Deep clone and normalize the data to prevent reference equality issues
-        const normalized = data.messages.map((msg: any) => ({
-          ...JSON.parse(JSON.stringify(msg)),
-          // Always convert is_staff to boolean to ensure consistent type
-          is_staff: Boolean(msg.is_staff),
-          // Ensure created_at is consistent
-          created_at: msg.created_at ? new Date(msg.created_at).toISOString() : null,
-          // Ensure user_name exists
-          user_name: msg.user_name || 'Unknown User'
-        }));
-        
-        setMessages(normalized);
-        setMessagesLoaded(true);
-        console.log('Messages normalized and set:', normalized.length);
-      } else {
-        setMessages([]);
-        setMessagesLoaded(true);
-        console.log('No messages found or invalid data format');
-      }
-    } catch (err) {
-      console.error('Failed to load messages:', err);
-      setError('Could not load messages. Please try again.');
+  }, [queryError]);
+
+  // Normalize and store messages whenever data updates
+  useEffect(() => {
+    if (data && Array.isArray((data as MessagesResponse).messages)) {
+      const normalized = (data as MessagesResponse).messages.map((msg: Message): Message => ({
+        ...JSON.parse(JSON.stringify(msg)),
+        is_staff: Boolean(msg.is_staff),
+        created_at: msg.created_at ? new Date(msg.created_at).toISOString() : null,
+        user_name: msg.user_name || 'Unknown User'
+      }));
+      setMessages(normalized);
+      setError('');
+    } else if (data) {
       setMessages([]);
-    } finally {
-      setLoading(false);
-      requestInProgressRef.current = false;
     }
-  }, [currentUser?.token, effectiveRole, loading, ticket.id]);
+    if (data) setMessagesLoaded(true);
+  }, [data]);
 
-  // No useEffect for automatic fetching - this completely eliminates the infinite loop problem
+  const loading = isPending || isFetching;
 
-  // Improved reply handler with better error handling and response processing
-  const handleReply = useCallback(async (e: React.FormEvent) => {
+  const sendMessageMutation = useMutation({
+    mutationFn: (payload: { message: string; is_staff: boolean }) =>
+      api.post(`/support-tickets/${ticket.id}/messages`, payload, { headers: getRoleHeaders() }),
+    onSuccess: () => {
+      setReply('');
+      queryClient.invalidateQueries({ queryKey: ['ticketMessages', ticket.id] });
+      queryClient.invalidateQueries({ queryKey: ['supportTickets'] });
+      if (onUpdate) onUpdate();
+    },
+    onError: (err: unknown) => {
+      setError(err instanceof Error ? err.message : 'Failed to send message');
+    }
+  });
+
+  const sending = sendMessageMutation.isPending;
+
+  // Fetch messages via React Query
+  const fetchMessages = useCallback(async () => {
+    setError('');
+    setMessagesLoaded(false);
+    try {
+      await refetch();
+    } finally {
+      setMessagesLoaded(true);
+    }
+  }, [refetch]);
+
+  // Automatically load messages when the detail modal is opened
+  useEffect(() => {
+    fetchMessages();
+  }, [fetchMessages]);
+
+  const handleReply = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (!reply.trim() || sending) return;
-    
-    setSending(true);
     setError('');
-    
-    try {
-      const ticketId = String(ticket.id);
-      const isStaffUser = currentUser?.role === 'admin' || currentUser?.role === 'manager';
-      const endpoint = 'http://localhost:3000/api/support-tickets';
-      const url = `${endpoint}/${ticketId}/messages`;
-      
-      console.log('Sending reply to ticket:', ticketId);
-      
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${currentUser?.token}`,
-          'X-User-Role': effectiveRole,
-          'Cache-Control': 'no-cache, no-store'
-        },
-        body: JSON.stringify({
-          message: reply,
-          is_staff: isStaffUser
-        })
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || `Error ${res.status}: ${res.statusText}`);
-      }
-      
-      // Clear the reply input immediately to give user feedback
-      setReply('');
-      
-      // Add a small delay before fetching updated messages to ensure backend has processed
-      setTimeout(async () => {
-        await fetchMessages();
-        // Notify parent component of the update
-        if (onUpdate) onUpdate();
-      }, 300);
-      
-    } catch (err) {
-      console.error('Failed to send message:', err);
-      setError(err instanceof Error ? err.message : 'Failed to send your message. Please try again.');
-    } finally {
-      setSending(false);
-    }
-  }, [currentUser?.token, effectiveRole, fetchMessages, onUpdate, reply, sending, ticket.id]);
+    sendMessageMutation.mutate({ message: reply, is_staff: isStaffUser });
+  }, [reply, sending, sendMessageMutation, isStaffUser]);
 
-  // Improved refresh handler with error handling
   const handleRefresh = useCallback(async () => {
     if (refreshing) return;
-    
     setRefreshing(true);
-    try {
-      // Clear messages first to avoid stale data
-      setMessages([]);
-      await fetchMessages();
-    } catch (err) {
-      console.error('Error during refresh:', err);
-      setError('Failed to refresh messages. Please try again.');
-    } finally {
-      setRefreshing(false);
-    }
-  }, [fetchMessages, refreshing]);
+    await fetchMessages();
+    // Ensure any cache is also invalidated for consistency
+    await queryClient.invalidateQueries({ queryKey: ['ticketMessages', ticket.id] });
+    setRefreshing(false);
+  }, [queryClient, refreshing, ticket.id, fetchMessages]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

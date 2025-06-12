@@ -13,7 +13,7 @@ async function addIsStaffColumn() {
       AND column_name = 'is_staff'
     `);
     
-    if (checkResult.rows.length === 0) {
+    if (checkResult.rows.length === 0) {s
       // Column doesn't exist, so add it
       await pool.query(`
         ALTER TABLE support_ticket_messages 

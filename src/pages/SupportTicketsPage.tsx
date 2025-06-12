@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+import React, { useState, useMemo } from 'react';
 import CreateSupportTicketModal from '../components/support/CreateSupportTicketModal';
 import SupportTicketDetail from '../components/support/SupportTicketDetail';
 import { MessageCircle, AlertCircle, Lightbulb, HelpCircle, Filter, Plus, RefreshCw, Search } from 'lucide-react';
+import api from '../utils/api';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface Ticket {
   id: string;
@@ -15,63 +16,40 @@ interface Ticket {
 }
 
 const SupportTicketsPage: React.FC = () => {
-  const { currentUser } = useAuth();
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [filteredTickets, setFilteredTickets] = useState<Ticket[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data, isPending, refetch } = useQuery<{ tickets: Ticket[] }>({
+    queryKey: ['supportTickets'],
+    queryFn: () => api.get('/support-tickets'),
+  });
+
+  const tickets: Ticket[] = useMemo(() => data?.tickets ?? [], [data]);
+
+  // Local filters
   const [showModal, setShowModal] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchTickets = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('http://localhost:3000/api/support-tickets', {
-        headers: { Authorization: `Bearer ${currentUser?.token}` },
-      });
-      const data = await res.json();
-      setTickets(data.tickets || []);
-      setFilteredTickets(data.tickets || []);
-    } catch (error) {
-      console.error('Failed to fetch tickets:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchTickets();
-  }, []);
-
-  useEffect(() => {
-    // Apply filters whenever tickets, searchTerm, or statusFilter changes
+  // Memo-derived ticket list after filters applied
+  const filteredTickets = useMemo(() => {
     let result = [...tickets];
-    
-    // Apply search filter
     if (searchTerm) {
-      result = result.filter(ticket => 
-        ticket.subject.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      result = result.filter(ticket => ticket.subject.toLowerCase().includes(searchTerm.toLowerCase()));
     }
-    
-    // Apply status filter
     if (statusFilter !== 'all') {
       result = result.filter(ticket => ticket.status.toLowerCase() === statusFilter.toLowerCase());
     }
-    
-    setFilteredTickets(result);
+    return result;
   }, [tickets, searchTerm, statusFilter]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await fetchTickets();
+    await refetch();
     setRefreshing(false);
   };
 
   const getCategoryIcon = (category: string | null | undefined) => {
-    // Handle null or undefined category
     const categoryValue = category?.toLowerCase() || 'other';
     switch (categoryValue) {
       case 'general':
@@ -87,7 +65,6 @@ const SupportTicketsPage: React.FC = () => {
 
   const getStatusBadge = (status: string | null | undefined) => {
     let colorClass = '';
-    // Handle null or undefined status
     const statusValue = status?.toLowerCase() || 'open';
     switch (statusValue) {
       case 'open':
@@ -193,7 +170,7 @@ const SupportTicketsPage: React.FC = () => {
 
         {/* Ticket List */}
         <div className="bg-white overflow-hidden">
-          {loading ? (
+          {isPending ? (
             <div className="flex justify-center items-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
               <span className="ml-2 text-gray-500">Loading tickets...</span>
@@ -262,7 +239,7 @@ const SupportTicketsPage: React.FC = () => {
         <CreateSupportTicketModal
           onClose={() => setShowModal(false)}
           onCreated={() => {
-            fetchTickets();
+            queryClient.invalidateQueries({ queryKey: ['supportTickets'] });
             setShowModal(false);
           }}
         />
@@ -271,7 +248,7 @@ const SupportTicketsPage: React.FC = () => {
         <SupportTicketDetail
           ticket={selectedTicket}
           onClose={() => setSelectedTicket(null)}
-          onUpdate={() => fetchTickets()}
+          onUpdate={() => queryClient.invalidateQueries({ queryKey: ['supportTickets'] })}
         />
       )}
     </div>

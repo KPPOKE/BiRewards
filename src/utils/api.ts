@@ -31,40 +31,54 @@ export const apiRequest = async (endpoint: string, options: RequestInit = {}) =>
 };
 
 /**
- * GET request helper
+ * GET request helper (allows optional RequestInit for custom headers, etc.)
  */
-export const get = (endpoint: string) => 
-  apiRequest(endpoint);
+export const get = (endpoint: string, options: RequestInit = {}) => 
+  apiRequest(endpoint, { ...options, method: options.method ?? 'GET' });
 
 /**
- * POST request helper
+ * POST request helper (allows additional RequestInit such as custom headers)
  */
-export const post = (endpoint: string, data: any) => 
+export const post = <T>(endpoint: string, data: T, options: RequestInit = {}) => 
   apiRequest(endpoint, {
     method: 'POST',
-    body: JSON.stringify(data)
+    body: JSON.stringify(data),
+    ...options
   });
 
 /**
  * PUT request helper
  */
-export const put = (endpoint: string, data: any) => 
+export const put = <T>(endpoint: string, data: T, options: RequestInit = {}) => 
   apiRequest(endpoint, {
     method: 'PUT',
-    body: JSON.stringify(data)
+    body: JSON.stringify(data),
+    ...options
+  });
+
+/**
+ * PATCH request helper
+ */
+export const patch = <T>(endpoint: string, data: T, options: RequestInit = {}) =>
+  apiRequest(endpoint, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+    ...options
   });
 
 /**
  * DELETE request helper
  */
-export const del = (endpoint: string) => 
+export const del = (endpoint: string, options: RequestInit = {}) => 
   apiRequest(endpoint, {
-    method: 'DELETE'
+    method: 'DELETE',
+    ...options
   });
 
 export default {
   get,
   post,
   put,
+  patch,
   delete: del
 };

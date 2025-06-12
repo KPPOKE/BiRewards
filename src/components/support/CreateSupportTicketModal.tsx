@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { MessageCircle, AlertCircle, Lightbulb, HelpCircle, X, Send } from 'lucide-react';
+import { MessageCircle, AlertCircle, Lightbulb, HelpCircle, X } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '../../utils/api';
 
 interface Props {
   onClose: () => void;
@@ -42,15 +43,34 @@ const categories: Category[] = [
 ];
 
 const CreateSupportTicketModal: React.FC<Props> = ({ onClose, onCreated }) => {
-  const { currentUser } = useAuth();
   const [category, setCategory] = useState('general');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [step, setStep] = useState(1); // 1 = category selection, 2 = form
 
   const selectedCategory = categories.find(cat => cat.value === category);
+
+  const queryClient = useQueryClient();
+
+  const createTicketMutation = useMutation({
+    mutationFn: (payload: {category: string; subject: string; message: string}) => 
+      api.post('/support-tickets', payload),
+    onSuccess: () => {
+      // Refresh tickets list cache
+      queryClient.invalidateQueries({ queryKey: ['supportTickets'] });
+      onCreated();
+    },
+    onError: (err: unknown) => {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Failed to submit ticket');
+      }
+    }
+  });
+
+  const loading = createTicketMutation.isPending;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,30 +79,8 @@ const CreateSupportTicketModal: React.FC<Props> = ({ onClose, onCreated }) => {
       return;
     }
     
-    setLoading(true);
     setError('');
-    
-    try {
-      const res = await fetch('http://localhost:3000/api/support-tickets', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${currentUser?.token}`,
-        },
-        body: JSON.stringify({ category, subject, message }),
-      });
-      
-      if (res.ok) {
-        onCreated();
-      } else {
-        const errorData = await res.json();
-        setError(errorData.message || 'Failed to submit ticket');
-        setLoading(false);
-      }
-    } catch (err) {
-      setError('Network error. Please try again.');
-      setLoading(false);
-    }
+    createTicketMutation.mutate({ category, subject, message });
   };
 
   return (
@@ -228,10 +226,7 @@ const CreateSupportTicketModal: React.FC<Props> = ({ onClose, onCreated }) => {
                       Submitting...
                     </>
                   ) : (
-                    <>
-                      <Send className="-ml-1 mr-2 h-4 w-4" />
-                      Submit Ticket
-                    </>
+                    'Submit Ticket'
                   )}
                 </button>
               </div>

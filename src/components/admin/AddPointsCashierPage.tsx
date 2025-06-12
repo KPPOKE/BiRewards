@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { UserRole } from '../../utils/roleAccess';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
+import api from '../../utils/api';
 
 const AddPointsCashierPage: React.FC = () => {
   const { currentUser } = useAuth();
@@ -30,13 +31,10 @@ const AddPointsCashierPage: React.FC = () => {
       }
       const userId = userData.data[0].id;
       // 2. Add points
-      const pointsRes = await fetch(`/api/transactions/users/${userId}/points`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ amount: Number(amount), description: 'Cashier/Waiter adjustment' }),
+      const pointsData = await api.post(`/users/${userId}/points`, {
+        amount: Number(amount),
+        description: 'Cashier/Waiter adjustment',
       });
-      const pointsData = await pointsRes.json();
       if (pointsData.success) {
         setMessage(`Points updated! New balance: ${pointsData.data.newPoints}`);
         setPhone('');

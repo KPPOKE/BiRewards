@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '../types';
+import api from '../utils/api';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -34,18 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      const res = await fetch('http://localhost:3000/api/users/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!res.ok) {
-        setIsLoading(false);
-        return false;
-      }
-
-      const response = await res.json();
+      const response = await api.post('/users/login', { email, password });
       
       if (response.success && response.token && response.data) {
         // Merge token into user object
@@ -69,24 +59,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (name: string, email: string, phone: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      const res = await fetch('http://localhost:3000/api/users/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, phone, password }),
-      });
+      const response = await api.post('/users/register', { name, email, phone, password });
 
-      const response = await res.json();
-
-      if (!res.ok) {
-        // Show backend error message if present
-        if (response && response.message) {
-          alert(response.message); // Replace with your toast/snackbar as needed
+      // If backend sends success false
+      if (!response.success) {
+        if (response.message) {
+          alert(response.message);
         }
         setIsLoading(false);
         return false;
       }
 
-      // Registration succeeded, OTP sent to email
       setIsLoading(false);
       return true;
     } catch (error) {
