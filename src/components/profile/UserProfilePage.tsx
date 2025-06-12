@@ -5,6 +5,7 @@ import Slider from '@mui/material/Slider';
 import Modal from '@mui/material/Modal';
 import Box from '@mui/material/Box';
 import { getCroppedImg } from './cropUtils';
+import { API_URL } from '../../utils/api';
 
 // Extend User type locally for phone and profile_image
 interface UserProfile {
@@ -17,8 +18,6 @@ interface UserProfile {
   points?: number;
   createdAt?: string;
 }
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 const UserProfilePage: React.FC = () => {
   const { currentUser, setCurrentUser } = useAuth();

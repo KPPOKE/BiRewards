@@ -2,11 +2,22 @@ import React, { useEffect, useState } from 'react';
 import Card, { CardHeader, CardContent } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import * as XLSX from 'xlsx';
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+import { API_URL } from '../../utils/api';
+
+// Type definition for activity log items
+interface ActivityLog {
+  created_at: string;
+  actor_name: string;
+  actor_role: string;
+  target_name?: string;
+  target_role?: string;
+  description: string;
+  points_added?: number;
+}
 
 const ActivityLogsPage: React.FC = () => {
   const token = localStorage.getItem('token');
-  const [activityLogs, setActivityLogs] = useState<any[]>([]);
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,8 +31,8 @@ const ActivityLogsPage: React.FC = () => {
       .then(res => {
         console.log('Activity Logs API response:', res.data);
         if (res.success) {
-          const filteredTransactions = res.data
-            ? res.data.filter((transaction: any) => {
+          const filteredTransactions = (res.data as ActivityLog[])
+            ? (res.data as ActivityLog[]).filter((transaction: ActivityLog) => {
                 const senderRoleCheck =
                   transaction.actor_role === 'waiter';
                 const receiverCheck = transaction.target_name !== undefined;
@@ -43,7 +54,7 @@ const ActivityLogsPage: React.FC = () => {
 
   const handleExportExcel = () => {
     if (!activityLogs || !activityLogs.length) return;
-    const data = activityLogs.map((log: any) => ({
+    const data = activityLogs.map((log: ActivityLog) => ({
       'Date/Time': new Date(log.created_at).toLocaleString(),
       'Actor Name': log.actor_name,
       'Actor Role': log.actor_role,

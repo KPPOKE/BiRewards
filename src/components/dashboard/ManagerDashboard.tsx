@@ -3,12 +3,11 @@ import React, { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { useAuth } from '../../context/AuthContext';
 import { UserRole } from '../../utils/roleAccess';
+import { API_URL } from '../../utils/api';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import { Gift, Pencil, Trash, Plus, Calendar } from 'lucide-react';
 import Input from '../ui/Input';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 interface Reward {
   id: string;
@@ -370,4 +369,3 @@ const ManagerDashboard: React.FC = () => {
 };
 
 export default ManagerDashboard;
-

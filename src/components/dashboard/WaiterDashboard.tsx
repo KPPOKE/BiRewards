@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { UserRole } from '../../utils/roleAccess';
+import { API_URL } from '../../utils/api';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 interface User {
   id: string;

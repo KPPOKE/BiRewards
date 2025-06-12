@@ -1,10 +1,10 @@
-import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
 import { Voucher, Transaction } from '../types';
 import { useAuth } from './AuthContext';
+import { API_URL } from '../utils/api';
 
 // Development mode flag to disable automatic API calls during development
 const DEV_MODE = import.meta.env.DEV;
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 interface LoyaltyContextType {
   transactions: Transaction[];
@@ -22,6 +22,28 @@ interface LoyaltyContextType {
 }
 
 const LoyaltyContext = createContext<LoyaltyContextType | undefined>(undefined);
+
+// Backend response typings
+interface BackendTransaction {
+  id: string;
+  user_id: string;
+  type: string;
+  amount: number;
+  reward_id?: string;
+  created_at: string;
+  description: string;
+  purchase_amount?: number;
+}
+
+interface BackendVoucher {
+  id: string | number;
+  title: string;
+  description: string;
+  points_cost: number;
+  expiry_days: number;
+  is_active: boolean | number;
+  minimum_required_tier?: 'Bronze' | 'Silver' | 'Gold';
+}
 
 export const LoyaltyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser } = useAuth();
@@ -47,7 +69,7 @@ export const LoyaltyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [currentUser]);
 
   // Fetch user transactions from the API
-  const fetchUserTransactions = async () => {
+  const fetchUserTransactions = useCallback(async () => {
     // Skip if already fetching to prevent duplicate calls
     if (!currentUser || !currentUser.id || isFetchingTransactions.current) return;
     
@@ -58,7 +80,7 @@ export const LoyaltyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     isFetchingTransactions.current = true;
     setIsLoading(true);
     try {
-      const token = (currentUser as any)?.token;
+      const token = currentUser?.token;
       const response = await fetch(`${API_URL}/users/${currentUser.id}/transactions`, {
         headers: { 
           'Content-Type': 'application/json',
@@ -71,7 +93,7 @@ export const LoyaltyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       if (data.success && data.data) {
         // Map backend transaction format to frontend format
-        const mappedTransactions = data.data.map((t: any) => {
+        const mappedTransactions: Transaction[] = (data.data as BackendTransaction[]).map<Transaction>((t) => {
           // Extract the purchase amount from the description if it's not available in purchase_amount
           let extractedAmount = 0;
           if (t.type === 'points_added' && t.description) {
@@ -89,7 +111,7 @@ export const LoyaltyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           return {
             id: t.id,
             userId: t.user_id,
-            type: t.type,
+            type: t.type as Transaction['type'],
             // For display purposes, use the actual purchase amount for points_added transactions
             amount: t.type === 'points_added' ? actualPurchaseAmount : (t.amount || 0),
             pointsEarned: t.type === 'points_added' ? t.amount : 0,
@@ -102,7 +124,7 @@ export const LoyaltyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         });
         
         // Deduplicate transactions by id before setting state
-        const uniqueTransactions = Array.from(new Map(mappedTransactions.map((t: Transaction) => [t.id, t])).values()) as Transaction[];
+        const uniqueTransactions = Array.from(new Map(mappedTransactions.map((t) => [t.id, t])).values()) as Transaction[];
         setTransactions(uniqueTransactions);
         setUserTransactions(uniqueTransactions);
         setFetchedTransactions(true);
@@ -118,10 +140,10 @@ export const LoyaltyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         transactions: Date.now()
       }));
     }
-  };
+  }, [currentUser, fetchedTransactions]);
 
   // Fetch rewards from the API
-  const fetchRewards = async () => {
+  const fetchRewards = useCallback(async () => {
     // Skip if already fetching to prevent duplicate calls
     if (isFetchingRewards.current) return;
     
@@ -132,7 +154,7 @@ export const LoyaltyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     isFetchingRewards.current = true;
     setIsLoading(true);
     try {
-      const token = (currentUser as any)?.token;
+      const token = currentUser?.token;
       const response = await fetch(`${API_URL}/rewards`, {
         headers: { 
           'Content-Type': 'application/json',
@@ -145,7 +167,7 @@ export const LoyaltyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       if (data.success && data.data) {
         // Map snake_case fields to camelCase
-        const mappedVouchers = data.data.map((item: any) => ({
+        const mappedVouchers = (data.data as BackendVoucher[]).map((item) => ({
           id: item.id.toString(),
           title: item.title,
           description: item.description,
@@ -172,7 +194,7 @@ export const LoyaltyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         rewards: Date.now()
       }));
     }
-  };
+  }, [currentUser, fetchedRewards]);
 
   // Listen for route (hash) changes and fetch fresh data on every navigation
   useEffect(() => {
@@ -188,7 +210,7 @@ export const LoyaltyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     fetchAll();
     window.addEventListener('hashchange', fetchAll);
     return () => window.removeEventListener('hashchange', fetchAll);
-  }, [currentUser]);
+  }, [currentUser, fetchRewards, fetchUserTransactions]);
 
   // Fetch data immediately when currentUser becomes available (e.g., after login)
   useEffect(() => {
@@ -196,7 +218,7 @@ export const LoyaltyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       fetchRewards();
       fetchUserTransactions();
     }
-  }, [currentUser]);
+  }, [currentUser, fetchRewards, fetchUserTransactions]);
 
   const redeemVoucher = async (voucherId: string): Promise<boolean> => {
     if (!currentUser) return false;
@@ -354,6 +376,7 @@ export const LoyaltyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useLoyalty = (): LoyaltyContextType => {
   const context = useContext(LoyaltyContext);
   if (context === undefined) {

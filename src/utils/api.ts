@@ -1,6 +1,6 @@
 // API utility functions for consistent API calls with authentication
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 /**
  * Makes an authenticated API request
