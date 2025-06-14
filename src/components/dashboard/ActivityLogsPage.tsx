@@ -141,18 +141,70 @@ const ActivityLogsPage: React.FC = () => {
   if (error) return <div className="p-6 text-red-600">{error}</div>;
 
   return (
-    <div className="p-6">
+    <div className="p-2 md:p-6">
       <Card className="shadow-md rounded-lg">
-        <CardHeader className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-          <div className="flex-1 flex flex-col md:flex-row md:items-end gap-2 md:gap-6">
-            <h1 className="section-title font-bold text-2xl mb-2 md:mb-0 tracking-tight">Recent Waiter Activity Logs</h1>
+        {/* Sticky top controls for mobile */}
+        <div className="md:hidden sticky top-0 z-20 bg-white border-b border-gray-100 pb-2 mb-2">
+          <h1 className="section-title font-bold text-lg mb-1 tracking-tight px-2 pt-2">Recent Waiter Activity Logs</h1>
+          <div className="flex flex-col gap-2 px-2">
+            <WaiterActivityLogsFilters
+              waiterOptions={waiterOptions}
+              filter={filter}
+              onFilterChange={setFilter}
+            />
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-row items-center gap-2 w-full">
+                <label className="text-xs font-semibold">Sort by:</label>
+                <select
+                  value={sortBy}
+                  onChange={e => setSortBy(e.target.value as 'date' | 'points')}
+                  className="rounded border-gray-300 px-2 py-1 text-sm flex-1"
+                >
+                  <option value="date">Date</option>
+                  <option value="points">Points</option>
+                </select>
+                <button
+                  className="px-2 py-1 rounded border border-gray-300 text-sm hover:bg-gray-100"
+                  onClick={() => setSortOrder(order => (order === 'asc' ? 'desc' : 'asc'))}
+                  title="Toggle sort order"
+                >
+                  {sortOrder === 'asc' ? '↑' : '↓'}
+                </button>
+              </div>
+              <div className="flex flex-row items-center gap-2 w-full">
+                <label className="text-xs font-semibold">Page size:</label>
+                <select
+                  value={pageSize}
+                  onChange={e => setPageSize(Number(e.target.value))}
+                  className="rounded border-gray-300 px-2 py-1 text-sm flex-1"
+                >
+                  {PAGE_SIZE_OPTIONS.map(size => (
+                    <option key={size} value={size}>{size}</option>
+                  ))}
+                </select>
+                {sortedLogs.length > 0 && (
+                  <Button
+                    onClick={handleExportExcel}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded shadow-md"
+                  >
+                    Export to Excel
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* Desktop controls */}
+        <CardHeader className="hidden md:flex flex-row items-end justify-between gap-4">
+          <div className="flex-1 flex flex-row items-end gap-6">
+            <h1 className="section-title font-bold text-2xl mb-0 tracking-tight">Recent Waiter Activity Logs</h1>
             <WaiterActivityLogsFilters
               waiterOptions={waiterOptions}
               filter={filter}
               onFilterChange={setFilter}
             />
           </div>
-          <div className="flex flex-row items-center gap-2 mt-2 md:mt-0">
+          <div className="flex flex-row items-center gap-2 mt-0">
             <label className="text-xs font-semibold mr-1">Sort by:</label>
             <select
               value={sortBy}
