@@ -3,6 +3,7 @@ import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import * as XLSX from 'xlsx';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { API_URL } from '../../utils/api';
+import ExportButton from '../../components/ui/ExportButton';
 
 const FILTERS = [
   { label: 'Yearly', value: 'year' },
@@ -13,7 +14,13 @@ const FILTERS = [
 const UserGrowthTrendsPage: React.FC = () => {
   const token = localStorage.getItem('token');
   const [filter, setFilter] = useState('month');
-  const [chartData, setChartData] = useState<any[]>([]);
+  interface ChartData {
+  label: string;
+  total_users: number;
+  new_users: number;
+}
+
+const [chartData, setChartData] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,29 +35,29 @@ const UserGrowthTrendsPage: React.FC = () => {
       .then(res => {
         if (res.success && res.data) {
           const { userGrowth, totalUsers } = res.data;
-          let formattedData: any[] = [];
+          let formattedData: ChartData[] = [];
           if (filter === 'month' || filter === 'day') {
             // Use data as-is (monthly)
-            const months = totalUsers.map((u: any) => u.month);
-            formattedData = months.map((month: string) => ({
-              label: month,
-              total_users: Number(totalUsers.find((u: any) => u.month === month)?.total_users || 0),
-              new_users: Number(userGrowth.find((u: any) => u.month === month)?.new_users || 0),
-            }));
+            const months = totalUsers.map((u: { label: string }) => u.label);
+formattedData = months.map((month: string): ChartData => ({
+  label: month,
+  total_users: Number(totalUsers.find((u: { label: string; total_users: number }) => u.label === month)?.total_users || 0),
+  new_users: Number(userGrowth.find((u: { label: string; new_users: number }) => u.label === month)?.new_users || 0),
+}));
           } else if (filter === 'year') {
             // Aggregate by year
             const yearMap: Record<string, { total_users: number; new_users: number }> = {};
-            totalUsers.forEach((u: any) => {
-              const year = u.month.split('-')[0];
+            totalUsers.forEach((u: { label: string; total_users: number }) => {
+              const year = u.label.split('-')[0];
               if (!yearMap[year]) yearMap[year] = { total_users: 0, new_users: 0 };
               yearMap[year].total_users += Number(u.total_users || 0);
             });
-            userGrowth.forEach((u: any) => {
+            userGrowth.forEach((u: { month: string; new_users: number }) => {
               const year = u.month.split('-')[0];
               if (!yearMap[year]) yearMap[year] = { total_users: 0, new_users: 0 };
               yearMap[year].new_users += Number(u.new_users || 0);
             });
-            formattedData = Object.entries(yearMap).map(([year, vals]) => ({
+            formattedData = Object.entries(yearMap).map(([year, vals]: [string, { total_users: number; new_users: number }]) => ({
               label: year,
               ...vals,
             }));
@@ -71,7 +78,12 @@ const UserGrowthTrendsPage: React.FC = () => {
 
   const handleExportExcel = () => {
     if (!chartData.length) return;
-    const worksheet = XLSX.utils.json_to_sheet(chartData);
+    const worksheet = XLSX.utils.json_to_sheet(chartData.map(row => ({
+  label: row.label,
+  total_users: row.total_users,
+  new_users: row.new_users,
+})));
+
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'User Growth Trends');
     XLSX.writeFile(workbook, 'user_growth_trends.xlsx');
@@ -86,7 +98,7 @@ const UserGrowthTrendsPage: React.FC = () => {
             <select value={filter} onChange={e => setFilter(e.target.value)} className="border rounded px-2 py-1 text-sm">
               {FILTERS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
             </select>
-            <button onClick={handleExportExcel} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">Export to Excel</button>
+            <ExportButton onClick={handleExportExcel} />
           </div>
         </CardHeader>
         <CardContent>
@@ -104,7 +116,7 @@ const UserGrowthTrendsPage: React.FC = () => {
                 <XAxis dataKey="label" angle={-30} textAnchor="end" height={60} />
                 <YAxis allowDecimals={false} tickCount={8} domain={[0, 'dataMax + 1']} />
                 <Tooltip
-                  formatter={(value: any) => value.toLocaleString()}
+                  formatter={(value: number) => value.toLocaleString()}
                   labelStyle={{ fontWeight: 'bold' }}
                 />
                 <Legend verticalAlign="top" height={36} />

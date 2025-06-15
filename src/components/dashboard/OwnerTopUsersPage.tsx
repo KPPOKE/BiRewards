@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
+import ExportButton from '../../components/ui/ExportButton';
 import * as XLSX from 'xlsx';
 import { API_URL } from '../../utils/api';
 
@@ -11,7 +12,7 @@ interface TopUser {
   total_purchase: number;
 }
 
-function formatRupiah(amount: any): string {
+function formatRupiah(amount: number | string): string {
   const num = typeof amount === 'number' ? amount : Number(amount);
   if (isNaN(num)) return 'Rp0,00';
   return 'Rp' + num
@@ -73,7 +74,7 @@ const OwnerTopUsersPage: React.FC = () => {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Top Users</CardTitle>
-          <button onClick={handleExportExcel} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">Export to Excel</button>
+          <ExportButton onClick={handleExportExcel} />
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">

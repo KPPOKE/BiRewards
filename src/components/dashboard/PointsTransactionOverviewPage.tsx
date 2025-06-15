@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
+import ExportButton from '../../components/ui/ExportButton';
 import * as XLSX from 'xlsx';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { API_URL } from '../../utils/api';
@@ -109,7 +110,7 @@ const PointsTransactionOverviewPage: React.FC = () => {
             <select value={filter} onChange={e => setFilter(e.target.value)} className="border rounded px-2 py-1 text-sm">
               {FILTERS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
             </select>
-            <button onClick={handleExportExcel} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">Export to Excel</button>
+            <ExportButton onClick={handleExportExcel} />
           </div>
         </CardHeader>
         <CardContent>
