@@ -240,11 +240,11 @@ const ActivityLogsPage: React.FC = () => {
         </CardHeader>
         <CardContent>
           {paginatedLogs && paginatedLogs.length > 0 ? (
-            <ul className="activity-log-list space-y-6 md:space-y-0">
+            <ul className="activity-log-list space-y-6">
   {paginatedLogs.map((log, idx) => (
     <li
       key={idx}
-      className="activity-log-item md:grid md:grid-cols-3 md:gap-6 bg-white md:rounded-xl md:shadow md:border md:border-gray-100 md:mb-4 flex flex-col md:flex-row md:items-stretch md:py-6 md:px-8 py-4 px-2 transition hover:shadow-lg"
+      className="activity-log-item grid md:grid-cols-3 md:gap-6 bg-white md:rounded-xl md:shadow md:border md:border-gray-100 flex flex-col md:flex-row md:items-stretch md:py-6 md:px-8 py-4 px-2 transition hover:shadow-lg"
     >
       {/* Column 1: Actor → Target */}
       <div className="flex items-center gap-3 md:gap-4 md:justify-start md:border-r md:border-gray-100 md:pr-6">

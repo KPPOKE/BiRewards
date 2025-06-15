@@ -45,7 +45,7 @@ const ManagerRedeemRequestsPage: React.FC = () => {
       setError(null);
       
       // Build query params
-      let queryParams = new URLSearchParams();
+      const queryParams = new URLSearchParams();
       queryParams.append('page', currentPage.toString());
       queryParams.append('limit', '10');
       
