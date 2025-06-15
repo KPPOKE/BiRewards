@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import { useLoyalty } from '../../context/LoyaltyContext';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Badge from '../ui/Badge';
@@ -14,15 +14,19 @@ const UserDashboard: React.FC = () => {
   const { currentUser } = useAuth();
   const { userTransactions, vouchers, redeemVoucher, refreshTransactions, refreshRewards, isLoading, lastRefreshTime } = useLoyalty();
   const userRole = (currentUser?.role as UserRole) || 'user';
-  
 
-  
+  // State for confirmation modal (move up)
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
+  const [selectedVoucherId, setSelectedVoucherId] = React.useState<string | null>(null);
+  const [redeemLoading, setRedeemLoading] = React.useState(false);
+  const [redeemMessage, setRedeemMessage] = React.useState<string | null>(null);
+
   // Add a second useEffect to refresh data when lastRefreshTime changes
   React.useEffect(() => {
     // This will re-render the component when transactions are updated
     // without triggering new API calls
   }, [lastRefreshTime]);
-  
+
   if (userRole !== 'user') {
     return <div className="p-6 text-red-600 font-semibold">Not authorized to view this page.</div>;
   }
@@ -62,10 +66,7 @@ const UserDashboard: React.FC = () => {
   // We don't need a separate date formatting function as we're using toLocaleDateString directly
 
   // State for confirmation modal
-  const [confirmOpen, setConfirmOpen] = React.useState(false);
-  const [selectedVoucherId, setSelectedVoucherId] = React.useState<string | null>(null);
-  const [redeemLoading, setRedeemLoading] = React.useState(false);
-  const [redeemMessage, setRedeemMessage] = React.useState<string | null>(null);
+  // (already declared at the top)
 
   // Only opens the confirmation modal; does NOT redeem directly
   const handleRedeemVoucher = (voucherId: string) => {

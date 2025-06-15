@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import { UserRole } from '../../utils/roleAccess';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Gift } from 'lucide-react';

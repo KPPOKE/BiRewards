@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './context/useAuth';
 import { LoyaltyProvider } from './context/LoyaltyContext';
 import Layout from './components/Layout';
 import LoginForm from './components/auth/LoginForm';

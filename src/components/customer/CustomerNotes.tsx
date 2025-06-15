@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import { FileText, Plus, Send, X, AlertCircle, RefreshCw } from 'lucide-react';
 
 // Flag to disable automatic API calls in development to prevent infinite loops
@@ -36,7 +36,7 @@ const CustomerNotes: React.FC<CustomerNotesProps> = ({ userId, onNoteAdded }) =>
   
 
 
-  const fetchNotes = async () => {
+  const fetchNotes = React.useCallback(async () => {
     try {
       setLoading(true);
       setError('');
@@ -55,14 +55,17 @@ const CustomerNotes: React.FC<CustomerNotesProps> = ({ userId, onNoteAdded }) =>
       } else {
         throw new Error(`API error: ${res.status}`);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      let message = 'Failed to load customer notes';
+      if (err instanceof Error) {
+        message = err.message;
+      }
       console.error('Error fetching customer notes:', err);
-      
-      setError(err.message || 'Failed to load customer notes');
+      setError(message);
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
 
   const addNote = async () => {
     if (!newNote.trim()) return;
@@ -91,10 +94,13 @@ const CustomerNotes: React.FC<CustomerNotesProps> = ({ userId, onNoteAdded }) =>
       } else {
         throw new Error(`API error: ${res.status}`);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      let message = 'Failed to add note';
+      if (err instanceof Error) {
+        message = err.message;
+      }
       console.error('Error adding customer note:', err);
-      
-      setError(err.message || 'Failed to add note');
+      setError(message);
     } finally {
       setSubmitting(false);
     }
@@ -117,7 +123,7 @@ const CustomerNotes: React.FC<CustomerNotesProps> = ({ userId, onNoteAdded }) =>
         }
       }
     }
-  }, [userId, isAuthorized]);
+  }, [userId, isAuthorized, fetchNotes]);
 
   if (!isAuthorized) {
     return null;

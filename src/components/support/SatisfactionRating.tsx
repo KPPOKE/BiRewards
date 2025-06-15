@@ -53,9 +53,13 @@ const SatisfactionRating: React.FC<SatisfactionRatingProps> = ({
       setSuccess(true);
       setSubmitted(true);
       if (onRatingSubmitted) onRatingSubmitted();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      let message = 'Failed to submit satisfaction rating';
+      if (err instanceof Error) {
+        message = err.message;
+      }
       console.error('Error submitting satisfaction rating:', err);
-      setError(err.message || 'Failed to submit rating');
+      setError(message);
     } finally {
       setLoading(false);
     }

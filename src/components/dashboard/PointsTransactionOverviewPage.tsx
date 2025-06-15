@@ -11,10 +11,22 @@ const FILTERS = [
   { label: 'Daily', value: 'day' },
 ];
 
+interface PointsStatsItem {
+  month: string;
+  points_issued?: number | string;
+  points_redeemed?: number | string;
+}
+
+interface ChartDataItem {
+  label: string;
+  points_issued: number;
+  points_redeemed: number;
+}
+
 const PointsTransactionOverviewPage: React.FC = () => {
   const token = localStorage.getItem('token');
   const [filter, setFilter] = useState('month');
-  const [chartData, setChartData] = useState<any[]>([]);
+  const [chartData, setChartData] = useState<ChartDataItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,10 +42,10 @@ const PointsTransactionOverviewPage: React.FC = () => {
         if (res.success && res.data) {
           const { pointsStats } = res.data;
 
-          let formattedData: any[] = [];
+          let formattedData: ChartDataItem[] = [];
           if (filter === 'month') {
             // Use data as-is (monthly)
-            formattedData = pointsStats.map((item: any) => ({
+            formattedData = pointsStats.map((item: PointsStatsItem) => ({
               label: item.month,
               points_issued: Number(item.points_issued || 0),
               points_redeemed: Number(item.points_redeemed || 0),
@@ -41,7 +53,7 @@ const PointsTransactionOverviewPage: React.FC = () => {
           } else if (filter === 'year') {
             // Aggregate by year
             const yearMap: Record<string, { points_issued: number; points_redeemed: number }> = {};
-            pointsStats.forEach((item: any) => {
+            pointsStats.forEach((item: PointsStatsItem) => {
               const year = item.month.split('-')[0];
               if (!yearMap[year]) yearMap[year] = { points_issued: 0, points_redeemed: 0 };
               yearMap[year].points_issued += Number(item.points_issued || 0);
@@ -53,7 +65,7 @@ const PointsTransactionOverviewPage: React.FC = () => {
             }));
           } else if (filter === 'day') {
             // If you have daily data, adjust here; else fallback to monthly
-            formattedData = pointsStats.map((item: any) => ({
+            formattedData = pointsStats.map((item: PointsStatsItem) => ({
               label: item.month, // Replace with item.day if available
               points_issued: Number(item.points_issued || 0),
               points_redeemed: Number(item.points_redeemed || 0),
@@ -128,7 +140,7 @@ const PointsTransactionOverviewPage: React.FC = () => {
                 <XAxis dataKey="label" angle={-30} textAnchor="end" height={60} />
                 <YAxis allowDecimals={false} tickCount={8} domain={[0, 'dataMax + 100']} />
                 <Tooltip
-                  formatter={(value: any) => value.toLocaleString()}
+                  formatter={(value: number) => value.toLocaleString()}
                   labelStyle={{ fontWeight: 'bold' }}
                 />
                 <Legend verticalAlign="top" height={36} />

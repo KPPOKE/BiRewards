@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import { User, Phone, Mail, Calendar, Award, Clock, RefreshCw, ChevronDown, ChevronUp, Tag } from 'lucide-react';
 import CustomerActivity from './CustomerActivity';
 import CustomerTags from './CustomerTags';
@@ -36,7 +36,7 @@ const CustomerProfile: React.FC<CustomerProfileProps> = ({ userId, onClose }) =>
 
   const isAuthorized = currentUser?.role === 'admin' || currentUser?.role === 'manager';
 
-  const fetchCustomerData = async () => {
+  const fetchCustomerData = React.useCallback(async () => {
     try {
       setLoading(true);
       const res = await fetch(`http://localhost:3000/api/users/${userId}`, {
@@ -53,19 +53,23 @@ const CustomerProfile: React.FC<CustomerProfileProps> = ({ userId, onClose }) =>
 
       const data = await res.json();
       setCustomer(data.user);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      let message = 'Failed to load customer data';
+      if (err instanceof Error) {
+        message = err.message;
+      }
       console.error('Error fetching customer data:', err);
-      setError(err.message || 'Failed to load customer data');
+      setError(message);
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
 
   useEffect(() => {
     if (userId) {
       fetchCustomerData();
     }
-  }, [userId]);
+  }, [userId, fetchCustomerData]);
 
   const handleRefresh = () => {
     fetchCustomerData();

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../context/useAuth';
 import { MessageCircle, AlertCircle, Lightbulb, HelpCircle, Clock, User, RefreshCw, Search, Filter, Send } from 'lucide-react';
 
 // No mock data fallback - using only database
@@ -54,7 +54,7 @@ const AdminSupportPage: React.FC = () => {
   // Define base API URL to avoid typos
   const API_BASE_URL = 'http://localhost:3000/api';
 
-  const fetchTickets = async () => {
+  const fetchTickets = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -93,9 +93,9 @@ const AdminSupportPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser]);
 
-  const fetchMessages = async (ticketId: string) => {
+  const fetchMessages = useCallback(async (ticketId: string) => {
     setMessageLoading(true);
     setError('');
     try {
@@ -134,13 +134,13 @@ const AdminSupportPage: React.FC = () => {
     } finally {
       setMessageLoading(false);
     }
-  };
+  }, [currentUser]);
 
   useEffect(() => {
     if (isAuthorized) {
       fetchTickets();
     }
-  }, [isAuthorized]);
+  }, [isAuthorized, fetchTickets]);
 
   useEffect(() => {
     // Apply filters whenever tickets, searchTerm, or statusFilter changes
@@ -167,7 +167,7 @@ const AdminSupportPage: React.FC = () => {
     if (selectedTicket) {
       fetchMessages(selectedTicket.id);
     }
-  }, [selectedTicket]);
+  }, [selectedTicket, fetchMessages]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -292,25 +292,14 @@ const AdminSupportPage: React.FC = () => {
       const updatedData = await res.json();
       console.log('API response:', updatedData);
       
-      // Use the data from the API response if available, otherwise create our own updated object
-      const ticketUpdate = updatedData?.ticket || {
-        ...selectedTicket,
-        status: newStatus,
-        updated_at: new Date().toISOString()
-      };
-      
-      // Update local state after successful API call
-      setSelectedTicket(ticketUpdate);
-      
-      // Update both tickets and filteredTickets state with the updated ticket
       setTickets(prev => 
         prev.map(ticket => 
-          ticket.id === selectedTicket.id ? ticketUpdate : ticket
+          ticket.id === selectedTicket.id ? updatedData : ticket
         )
       );
       setFilteredTickets(prev => 
         prev.map(ticket => 
-          ticket.id === selectedTicket.id ? ticketUpdate : ticket
+          ticket.id === selectedTicket.id ? updatedData : ticket
         )
       );
       
@@ -390,7 +379,8 @@ const AdminSupportPage: React.FC = () => {
         minute: 'numeric',
         hour12: true
       }).format(date);
-    } catch (e) {
+    } catch {
+
       return dateString;
     }
   };
@@ -660,7 +650,8 @@ const AdminSupportPage: React.FC = () => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+
+}
 
 export default AdminSupportPage;

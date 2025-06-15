@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
 import { Voucher, Transaction } from '../types';
-import { useAuth } from './AuthContext';
+import { useAuth } from './useAuth';
 import { API_URL } from '../utils/api';
 
 // Development mode flag to disable automatic API calls during development

@@ -36,8 +36,8 @@ const OtpModal: React.FC<OtpModalProps> = ({ open, email, onClose, onSuccess }) 
       } else {
         setError(data.message || 'Verification failed');
       }
-    } catch (err) {
-      setError('An error occurred. Try again.');
+    } catch {
+      setError('Failed to send OTP. Please try again.');
     } finally {
       setLoading(false);
     }

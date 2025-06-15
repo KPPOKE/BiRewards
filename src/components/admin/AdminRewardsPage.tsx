@@ -5,17 +5,25 @@ import Button from '../ui/Button';
 import Badge from '../ui/Badge';
 import { Gift, Pencil, Search, Plus, Calendar, X, ToggleLeft, ToggleRight } from 'lucide-react';
 import { Voucher } from '../../types';
-import { useAuth } from '../../context/AuthContext';
+
+// Backend API shape for a voucher
+interface VoucherApi {
+  id: string;
+  title: string;
+  description: string;
+  points_cost: number;
+  expiry_days: number;
+  is_active: boolean;
+  minimum_required_tier: 'Bronze' | 'Silver' | 'Gold';
+  // Add any other backend fields as needed
+}
+
+import { useAuth } from '../../context/useAuth';
 import { UserRole } from '../../utils/roleAccess';
 
 const AdminRewardsPage: React.FC = () => {
   const { currentUser } = useAuth();
   const userRole = (currentUser?.role as UserRole) || 'user';
-
-  if (userRole !== 'admin' && userRole !== 'manager') {
-    return <div className="p-6 text-red-600 font-semibold">Not authorized to view this page.</div>;
-  }
-
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +31,6 @@ const AdminRewardsPage: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [currentVoucher, setCurrentVoucher] = useState<Voucher | null>(null);
-  
   // New voucher state
   const [newVoucher, setNewVoucher] = useState({
     title: '',
@@ -34,8 +41,16 @@ const AdminRewardsPage: React.FC = () => {
     minimumRequiredTier: 'Bronze' as 'Bronze' | 'Silver' | 'Gold',
   });
 
+  useEffect(() => {
+    fetchVouchers();
+  }, []);
+
+  if (userRole !== 'admin' && userRole !== 'manager') {
+    return <div className="p-6 text-red-600 font-semibold">Not authorized to view this page.</div>;
+  }
+
   // Function to fetch vouchers/rewards
-  const fetchVouchers = async () => {
+  async function fetchVouchers() {
     setLoading(true);
     setError(null);
     try {
@@ -50,27 +65,24 @@ const AdminRewardsPage: React.FC = () => {
       const data = await res.json();
       if (data.success) {
         setVouchers(
-          data.data.map((item: any) => ({
-            ...item,
+          data.data.map((item: VoucherApi) => ({
+            id: item.id,
+            title: item.title,
+            description: item.description,
             pointsCost: item.points_cost,
-            isActive: item.is_active,
             expiryDays: item.expiry_days,
-            minimumRequiredTier: item.minimum_required_tier as 'Bronze' | 'Silver' | 'Gold',
+            isActive: item.is_active,
+            minimumRequiredTier: item.minimum_required_tier,
           }))
         );
       } else {
         setError('Failed to fetch rewards');
       }
-    } catch (err) {
+    } catch {
       setError('Failed to fetch rewards');
     }
     setLoading(false);
-  };
-
-  // Initial fetch on component mount
-  useEffect(() => {
-    fetchVouchers();
-  }, []);
+  }
 
   // Filter vouchers based on search term
   const filteredVouchers = vouchers.filter(voucher => 
@@ -118,7 +130,7 @@ const AdminRewardsPage: React.FC = () => {
       // Success! Refresh the rewards list
       await fetchVouchers();
       alert('Reward created successfully!');
-    } catch (err) {
+    } catch {
       alert('Failed to create reward');
     }
 
@@ -179,7 +191,7 @@ const AdminRewardsPage: React.FC = () => {
       // Success! Refresh the rewards list
       await fetchVouchers();
       alert('Reward updated successfully!');
-    } catch (err) {
+    } catch {
       alert('Failed to update reward');
     }
 
@@ -223,7 +235,7 @@ const AdminRewardsPage: React.FC = () => {
       } else {
         alert('Failed to delete reward');
       }
-    } catch (err) {
+    } catch {
       alert('Failed to delete reward.');
     }
   };

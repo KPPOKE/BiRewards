@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Card, { CardHeader, CardTitle, CardContent, CardFooter } from '../ui/Card';
@@ -56,8 +56,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onLoginClick }) 
       } else {
         setError('Email or phone already in use or registration failed');
       }
-    } catch (err) {
-      setError('An error occurred during registration. Please try again.');
+    } catch {
+      setError('Registration failed. Please try again.');
     }
   };
 

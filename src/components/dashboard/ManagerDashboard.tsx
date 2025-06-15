@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 // NOTE: You must run 'npm install xlsx' for the export feature to work
-import * as XLSX from 'xlsx';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import { UserRole } from '../../utils/roleAccess';
 import { API_URL } from '../../utils/api';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
@@ -18,21 +17,12 @@ interface Reward {
   created_at: string;
 }
 
-interface TopUser {
-  id: string;
-  name: string;
-  email: string;
-  points: number;
-  total_purchase: number;
-}
-
 const ManagerDashboard: React.FC = () => {
   const { currentUser } = useAuth();
   const userRole = (currentUser?.role as UserRole) || 'user';
   const token = localStorage.getItem('token');
 
   const [rewards, setRewards] = useState<Reward[]>([]);
-  const [topUsers, setTopUsers] = useState<TopUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -41,25 +31,8 @@ const ManagerDashboard: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [addForm, setAddForm] = useState({ title: '', points_cost: 0, is_active: true });
   const [addLoading, setAddLoading] = useState(false);
-  const [activityLogs, setActivityLogs] = useState<any[]>([]);
+  
 
-  // Export to Excel handler (must be inside component to access activityLogs)
-  const handleExportExcel = () => {
-    if (!activityLogs || !activityLogs.length) return;
-    const data = activityLogs.map((log: any) => ({
-      'Date/Time': new Date(log.created_at).toLocaleString(),
-      'Actor Name': log.actor_name,
-      'Actor Role': log.actor_role,
-      'Target Name': log.target_name,
-      'Target Role': log.target_role,
-      'Action/Description': log.description,
-      'Points Added': typeof log.points_added !== 'undefined' ? log.points_added : '',
-    }));
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Activity Logs');
-    XLSX.writeFile(workbook, 'activity_logs.xlsx');
-  };
 
   useEffect(() => {
     if (userRole !== 'manager') return;
@@ -81,8 +54,8 @@ const ManagerDashboard: React.FC = () => {
       .then(([rewardsRes, metricsRes, logsRes]) => {
         if (rewardsRes.success && metricsRes.success && logsRes.success) {
           setRewards(rewardsRes.data);
-          setTopUsers(metricsRes.data.topUsers || []);
-          setActivityLogs(logsRes.data || []);
+          // removed setTopUsers (no longer needed)metricsRes.data.topUsers || []);
+          // removed setActivityLogs (no longer needed)logsRes.data || []);
           setError(null);
         } else {
           setError('Failed to fetch dashboard data');
@@ -121,7 +94,7 @@ const ManagerDashboard: React.FC = () => {
       } else {
         alert('Failed to update reward.');
       }
-    } catch (err) {
+    } catch {
       alert('Failed to update reward.');
     }
   };
@@ -142,7 +115,7 @@ const ManagerDashboard: React.FC = () => {
       } else {
         alert('Failed to delete reward.');
       }
-    } catch (err) {
+    } catch {
       alert('Failed to delete reward.');
     }
   };
@@ -167,7 +140,7 @@ const ManagerDashboard: React.FC = () => {
       } else {
         alert('Failed to add reward.');
       }
-    } catch (err) {
+    } catch {
       alert('Failed to add reward.');
     }
     setAddLoading(false);

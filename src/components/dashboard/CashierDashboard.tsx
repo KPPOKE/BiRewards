@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import { UserRole } from '../../utils/roleAccess';
 import { API_URL } from '../../utils/api';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
@@ -81,7 +81,7 @@ const CashierDashboard: React.FC = () => {
       } else {
         setSearchError('User not found');
       }
-    } catch (err) {
+    } catch {
       setSearchError('User not found');
     }
     

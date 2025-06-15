@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   CheckCircle,
   XCircle,
@@ -39,7 +39,7 @@ const ManagerRedeemRequestsPage: React.FC = () => {
   const [endDate, setEndDate] = useState<string>('');
 
   // Fetch redeem requests with filters
-  const fetchRedeemRequests = async () => {
+  const fetchRedeemRequests = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -81,12 +81,12 @@ const ManagerRedeemRequestsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, statusFilter, startDate, endDate]);
 
   // Initial fetch when component mounts or filters/page change
   useEffect(() => {
     fetchRedeemRequests();
-  }, [currentPage, statusFilter, startDate, endDate]);
+  }, [currentPage, statusFilter, startDate, endDate, fetchRedeemRequests]);
 
   // Process (approve/reject) redeem request
   const processRedeemRequest = async (id: number, action: 'approve' | 'reject') => {

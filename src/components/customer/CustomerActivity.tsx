@@ -9,7 +9,7 @@ interface ActivityItem {
   user_id: string;
   activity_type: string;
   description: string;
-  metadata: any;
+  metadata: Record<string, unknown> & { rating?: number };
   created_at: string;
 }
 
@@ -41,7 +41,7 @@ const CustomerActivity: React.FC<CustomerActivityProps> = ({ userId, refreshTrig
   
 
 
-  const fetchActivities = async (offset = 0) => {
+  const fetchActivities = React.useCallback(async (offset = 0) => {
     try {
       setLoading(true);
       setError('');
@@ -67,14 +67,17 @@ const CustomerActivity: React.FC<CustomerActivityProps> = ({ userId, refreshTrig
       } else {
         throw new Error(`API error: ${res.status}`);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      let message = 'Failed to load customer activity';
+      if (err instanceof Error) {
+        message = err.message;
+      }
       console.error('Error fetching customer activity:', err);
-      
-      setError(err.message || 'Failed to load customer activity');
+      setError(message);
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
 
   useEffect(() => {
     if (userId) {
@@ -88,7 +91,7 @@ const CustomerActivity: React.FC<CustomerActivityProps> = ({ userId, refreshTrig
         }
       }
     }
-  }, [userId, refreshTrigger]);
+  }, [userId, refreshTrigger, fetchActivities]);
 
   const loadMore = () => {
     if (pagination.hasMore && !loading) {
@@ -196,7 +199,7 @@ const CustomerActivity: React.FC<CustomerActivityProps> = ({ userId, refreshTrig
                             {[...Array(5)].map((_, i) => (
                               <Star 
                                 key={i} 
-                                className={`h-4 w-4 ${i < activity.metadata.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} 
+                                className={`h-4 w-4 ${activity.metadata && typeof activity.metadata.rating === 'number' && i < activity.metadata.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} 
                               />
                             ))}
                           </div>

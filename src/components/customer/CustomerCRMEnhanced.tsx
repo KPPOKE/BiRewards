@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import { Tag, User, Clock, Star, AlertCircle, RefreshCw } from 'lucide-react';
 import CustomerTags from './CustomerTags';
 import CustomerNotes from './CustomerNotes';
@@ -19,7 +19,22 @@ interface CustomerCRMEnhancedProps {
 const CustomerCRMEnhanced: React.FC<CustomerCRMEnhancedProps> = ({ userId, ticketId, onClose }) => {
   const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState<'profile' | 'activity' | 'tags' | 'notes' | 'satisfaction'>('profile');
-  const [customer, setCustomer] = useState<any>(null);
+
+  interface Customer {
+    id: string;
+    name: string;
+    email: string;
+    phone?: string;
+    created_at: string;
+    profile_image?: string;
+    points?: number;
+    loyalty_tier?: string;
+    transaction_count?: number;
+    ticket_count?: number;
+    // Add more fields as needed based on your API
+  }
+
+  const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -31,7 +46,7 @@ const CustomerCRMEnhanced: React.FC<CustomerCRMEnhancedProps> = ({ userId, ticke
   
 
 
-  const fetchCustomerData = async () => {
+  const fetchCustomerData = React.useCallback(async () => {
     if (!userId) return;
     
     try {
@@ -53,14 +68,18 @@ const CustomerCRMEnhanced: React.FC<CustomerCRMEnhancedProps> = ({ userId, ticke
       } else {
         throw new Error(`API error: ${res.status}`);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      let message = 'Failed to load customer data';
+      if (err instanceof Error) {
+        message = err.message;
+      }
       console.error('Error fetching customer data:', err);
-      
-      setError(err.message || 'Failed to load customer data');
+      setError(message);
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
+
 
   useEffect(() => {
     if (!DISABLE_AUTO_REFRESH) {
@@ -72,7 +91,7 @@ const CustomerCRMEnhanced: React.FC<CustomerCRMEnhancedProps> = ({ userId, ticke
         initialLoadDone.current = true;
       }
     }
-  }, [userId]);
+  }, [userId, fetchCustomerData]);
 
   const handleRefresh = () => {
     fetchCustomerData();

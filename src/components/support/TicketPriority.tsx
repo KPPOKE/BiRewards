@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import { AlertTriangle, Calendar, Save } from 'lucide-react';
 
 interface TicketPriorityProps {
@@ -57,9 +57,13 @@ const TicketPriority: React.FC<TicketPriorityProps> = ({
       setTimeout(() => {
         setSuccess(false);
       }, 3000);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      let message = 'Failed to update ticket priority';
+      if (err instanceof Error) {
+        message = err.message;
+      }
       console.error('Error updating ticket priority:', err);
-      setError(err.message || 'Failed to update priority');
+      setError(message);
     } finally {
       setLoading(false);
     }

@@ -1,7 +1,14 @@
 // Utility for cropping image using react-easy-crop
 // Returns a Blob of the cropped image
 
-export async function getCroppedImg(imageSrc: string, crop: any): Promise<Blob | null> {
+export interface CropArea {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export async function getCroppedImg(imageSrc: string, crop: CropArea): Promise<Blob | null> {
   const image = await createImage(imageSrc);
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');

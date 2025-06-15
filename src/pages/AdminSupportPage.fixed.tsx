@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../context/AuthContext';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useAuth } from '../context/useAuth';
 import { 
   MessageCircle, 
   AlertCircle, 
@@ -9,14 +9,11 @@ import {
   User, 
   RefreshCw, 
   Search, 
-  Filter, 
   Send,
-  UserCircle,
-  Tag
-} from 'lucide-react';
+  UserCircle
+} from 'lucide-react'; // Removed unused: Filter, Tag, SatisfactionRating
 import CustomerCRMEnhanced from '../components/customer/CustomerCRMEnhanced';
 import TicketPriority from '../components/support/TicketPriority';
-import SatisfactionRating from '../components/support/SatisfactionRating';
 
 // Flag to determine if we should use mock data as fallback
 const USE_MOCK_FALLBACK = true;
@@ -24,8 +21,7 @@ const USE_MOCK_FALLBACK = true;
 // Flag to disable automatic API calls in development to prevent infinite loops
 const DISABLE_AUTO_REFRESH = true;
 
-// Utility function to add delay between API calls
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 
 interface Ticket {
   id: string;
@@ -51,18 +47,18 @@ interface Message {
 }
 
 const AdminSupportPage: React.FC = () => {
+
   const { currentUser } = useAuth();
   const [tickets, setTickets] = useState<Ticket[]>([]);
+
   const [filteredTickets, setFilteredTickets] = useState<Ticket[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [reply, setReply] = useState('');
   const [loading, setLoading] = useState(true);
   const [messageLoading, setMessageLoading] = useState(false);
-  const [sending, setSending] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [showCustomerProfile, setShowCustomerProfile] = useState(false);
   const [showPriorityModal, setShowPriorityModal] = useState(false);
@@ -72,7 +68,145 @@ const AdminSupportPage: React.FC = () => {
 
   // Check if user is admin or manager
   const isAuthorized = currentUser?.role === 'admin' || currentUser?.role === 'manager';
-  
+
+  // Mock tickets data for development
+  const mockTickets = React.useMemo<Ticket[]>(() => [
+    {
+      id: '1',
+      subject: 'Points not showing up',
+      category: 'complaint',
+      status: 'open',
+      priority: 'high',
+      created_at: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+      updated_at: new Date(Date.now() - 86400000).toISOString(),
+      user_id: 'user1',
+      user_name: 'Test User',
+      user_email: 'testuser@example.com'
+    },
+    {
+      id: '2',
+      subject: 'How do I redeem rewards?',
+      category: 'general',
+      status: 'open',
+      priority: 'medium',
+      created_at: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
+      updated_at: new Date(Date.now() - 172800000).toISOString(),
+      user_id: 'user2',
+      user_name: 'Karen',
+      user_email: 'usertest@gmail.com'
+    },
+    {
+      id: '3',
+      subject: 'App crashes on login',
+      category: 'complaint',
+      status: 'in progress',
+      priority: 'high',
+      created_at: new Date(Date.now() - 259200000).toISOString(), // 3 days ago
+      updated_at: new Date(Date.now() - 86400000).toISOString(),
+      user_id: 'user3',
+      user_name: 'Alfian',
+      user_email: 'alfian@gmail.com'
+    }
+  ], []);
+
+  // Mock messages for development
+  const mockMessages = React.useMemo<Record<string, Message[]>>(() => ({
+    '1': [
+      {
+        id: '101',
+        user_id: 'user1',
+        ticket_id: '1',
+        message: 'I completed a purchase yesterday but my points haven\'t been added to my account yet.',
+        is_staff: false,
+        created_at: new Date(Date.now() - 86400000).toISOString(),
+        user_name: 'Test User'
+      }
+    ],
+    '2': [
+      {
+        id: '201',
+        user_id: 'user2',
+        ticket_id: '2',
+        message: 'I\'m new to the app and I\'m not sure how to redeem my points for rewards. Can you help?',
+        is_staff: false,
+        created_at: new Date(Date.now() - 172800000).toISOString(),
+        user_name: 'Karen'
+      }
+    ],
+    '3': [
+      {
+        id: '301',
+        user_id: 'user3',
+        ticket_id: '3',
+        message: 'Every time I try to log in, the app crashes. I\'m using the latest version.',
+        is_staff: false,
+        created_at: new Date(Date.now() - 259200000).toISOString(),
+        user_name: 'Alfian'
+      },
+      {
+        id: '302',
+        user_id: 'admin1',
+        ticket_id: '3',
+        message: 'I\'m sorry to hear about the issue. Could you please tell me what device and OS version you\'re using?',
+        is_staff: true,
+        created_at: new Date(Date.now() - 172800000).toISOString(),
+        user_name: 'Admin User'
+      },
+      {
+        id: '303',
+        user_id: 'user3',
+        ticket_id: '3',
+        message: 'I\'m using an iPhone 12 with iOS 15.5.',
+        is_staff: false,
+        created_at: new Date(Date.now() - 86400000).toISOString(),
+        user_name: 'Alfian'
+      }
+    ]
+  }), []);
+
+  // Declare fetchTickets above its first use
+  const fetchTickets = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError('');
+      // Attempt to fetch from API
+      const res = await fetch('http://localhost:3000/api/support-tickets', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      // Check if response is ok
+      if (res.ok) {
+        const data = await res.json();
+        setTickets(data.tickets);
+      } else {
+        // If API fails and we're in development, use mock data
+        if (USE_MOCK_FALLBACK) {
+          console.log('Using mock ticket data');
+          setTickets(mockTickets);
+        } else {
+          throw new Error(`API error: ${res.status}`);
+        }
+      }
+    } catch (err: unknown) {
+        let message = 'An error occurred';
+        if (err instanceof Error) {
+          message = err.message;
+        }
+      console.error('Error fetching tickets:', err);
+      setError(message);
+      // Use mock data as fallback in development
+      if (USE_MOCK_FALLBACK) {
+        console.log('Using mock ticket data after error');
+        setTickets(mockTickets);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [mockTickets]);
+
   // Effect to fetch tickets on component mount
   useEffect(() => {
     if (!DISABLE_AUTO_REFRESH) {
@@ -84,7 +218,51 @@ const AdminSupportPage: React.FC = () => {
         initialLoadDone.current = true;
       }
     }
-  }, []);
+  }, [fetchTickets]);
+
+  // Function to fetch messages for a ticket
+  const fetchMessages = useCallback(async (ticketId: string) => {
+    try {
+      setMessageLoading(true);
+      setError('');
+      // Attempt to fetch from API
+      const res = await fetch(`http://localhost:3000/api/support-tickets/${ticketId}/messages`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      // Check if response is ok
+      if (res.ok) {
+        const data = await res.json();
+        console.log('Fetched messages:', data.messages);
+        setMessages(data.messages);
+      } else {
+        // If API fails and we're in development, use mock data
+        if (USE_MOCK_FALLBACK && mockMessages[ticketId]) {
+          console.log('Using mock message data');
+          setMessages(mockMessages[ticketId]);
+        } else {
+          throw new Error(`API error: ${res.status}`);
+        }
+      }
+    } catch (err: unknown) {
+        let message = 'An error occurred';
+        if (err instanceof Error) {
+          message = err.message;
+        }
+      console.error('Error fetching messages:', err);
+      setError(message);
+      // Use mock data as fallback in development
+      if (USE_MOCK_FALLBACK && mockMessages[ticketId]) {
+        console.log('Using mock message data after error');
+        setMessages(mockMessages[ticketId]);
+      }
+    } finally {
+      setMessageLoading(false);
+    }
+  }, [mockMessages]);
 
   // Effect to filter tickets when search term or status filter changes
   useEffect(() => {
@@ -117,100 +295,13 @@ const AdminSupportPage: React.FC = () => {
     if (selectedTicket) {
       fetchMessages(selectedTicket.id);
     }
-  }, [selectedTicket]);
-  
-  // Function to fetch tickets
-  const fetchTickets = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      
-      // Attempt to fetch from API
-      const res = await fetch('http://localhost:3000/api/support-tickets', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      // Check if response is ok
-      if (res.ok) {
-        const data = await res.json();
-        setTickets(data.tickets);
-      } else {
-        // If API fails and we're in development, use mock data
-        if (USE_MOCK_FALLBACK) {
-          console.log('Using mock ticket data');
-          setTickets(mockTickets);
-        } else {
-          throw new Error(`API error: ${res.status}`);
-        }
-      }
-    } catch (err: any) {
-      console.error('Error fetching tickets:', err);
-      setError(err.message || 'Failed to load tickets');
-      
-      // Use mock data as fallback in development
-      if (USE_MOCK_FALLBACK) {
-        console.log('Using mock ticket data after error');
-        setTickets(mockTickets);
-      }
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+  }, [selectedTicket, fetchMessages]);
 
-  // Function to fetch messages for a ticket
-  const fetchMessages = async (ticketId: string) => {
-    try {
-      setMessageLoading(true);
-      setError('');
-      
-      // Attempt to fetch from API
-      const res = await fetch(`http://localhost:3000/api/support-tickets/${ticketId}/messages`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      // Check if response is ok
-      if (res.ok) {
-        const data = await res.json();
-        console.log('Fetched messages:', data.messages);
-        setMessages(data.messages);
-      } else {
-        // If API fails and we're in development, use mock data
-        if (USE_MOCK_FALLBACK && mockMessages[ticketId]) {
-          console.log('Using mock message data');
-          setMessages(mockMessages[ticketId]);
-        } else {
-          throw new Error(`API error: ${res.status}`);
-        }
-      }
-    } catch (err: any) {
-      console.error('Error fetching messages:', err);
-      setError(err.message || 'Failed to load messages');
-      
-      // Use mock data as fallback in development
-      if (USE_MOCK_FALLBACK && mockMessages[ticketId]) {
-        console.log('Using mock message data after error');
-        setMessages(mockMessages[ticketId]);
-      }
-    } finally {
-      setMessageLoading(false);
-    }
-  };
-  
   // Function to handle refresh button click
   const handleRefresh = () => {
-    setRefreshing(true);
     fetchTickets();
   };
-  
+
   // Function to send a reply to a ticket
   const handleSendReply = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -220,7 +311,7 @@ const AdminSupportPage: React.FC = () => {
     }
     
     try {
-      setSending(true);
+      setMessageLoading(true);
       setError('');
       
       const res = await fetch(`http://localhost:3000/api/support-tickets/${selectedTicket.id}/messages`, {
@@ -253,14 +344,18 @@ const AdminSupportPage: React.FC = () => {
       // Refresh the ticket to update its status
       fetchTickets();
       
-    } catch (err: any) {
+    } catch (err: unknown) {
+        let message = 'An error occurred';
+        if (err instanceof Error) {
+          message = err.message;
+        }
       console.error('Error sending reply:', err);
-      setError(err.message || 'Failed to send reply');
+      setError(message);
     } finally {
-      setSending(false);
+      setMessageLoading(false);
     }
   };
-  
+
   // Function to change ticket status
   const handleStatusChange = async (newStatus: string) => {
     if (!selectedTicket || !isAuthorized) {
@@ -291,9 +386,13 @@ const AdminSupportPage: React.FC = () => {
       // Refresh the tickets list
       fetchTickets();
       
-    } catch (err: any) {
+    } catch (err: unknown) {
+        let message = 'An error occurred';
+        if (err instanceof Error) {
+          message = err.message;
+        }
       console.error('Error changing ticket status:', err);
-      setError(err.message || 'Failed to update ticket status');
+      setError(message);
     }
   };
   
@@ -371,101 +470,7 @@ const AdminSupportPage: React.FC = () => {
     }
   };
 
-  // Mock tickets data for development
-  const mockTickets: Ticket[] = [
-    {
-      id: '1',
-      subject: 'Points not showing up',
-      category: 'complaint',
-      status: 'open',
-      priority: 'high',
-      created_at: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-      updated_at: new Date(Date.now() - 86400000).toISOString(),
-      user_id: 'user1',
-      user_name: 'Test User',
-      user_email: 'testuser@example.com'
-    },
-    {
-      id: '2',
-      subject: 'How do I redeem rewards?',
-      category: 'general',
-      status: 'open',
-      priority: 'medium',
-      created_at: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
-      updated_at: new Date(Date.now() - 172800000).toISOString(),
-      user_id: 'user2',
-      user_name: 'Karen',
-      user_email: 'usertest@gmail.com'
-    },
-    {
-      id: '3',
-      subject: 'App crashes on login',
-      category: 'complaint',
-      status: 'in progress',
-      priority: 'high',
-      created_at: new Date(Date.now() - 259200000).toISOString(), // 3 days ago
-      updated_at: new Date(Date.now() - 86400000).toISOString(),
-      user_id: 'user3',
-      user_name: 'Alfian',
-      user_email: 'alfian@gmail.com'
-    }
-  ];
 
-  // Mock messages for development
-  const mockMessages: Record<string, Message[]> = {
-    '1': [
-      {
-        id: '101',
-        user_id: 'user1',
-        ticket_id: '1',
-        message: 'I completed a purchase yesterday but my points haven\'t been added to my account yet.',
-        is_staff: false,
-        created_at: new Date(Date.now() - 86400000).toISOString(),
-        user_name: 'Test User'
-      }
-    ],
-    '2': [
-      {
-        id: '201',
-        user_id: 'user2',
-        ticket_id: '2',
-        message: 'I\'m new to the app and I\'m not sure how to redeem my points for rewards. Can you help?',
-        is_staff: false,
-        created_at: new Date(Date.now() - 172800000).toISOString(),
-        user_name: 'Karen'
-      }
-    ],
-    '3': [
-      {
-        id: '301',
-        user_id: 'user3',
-        ticket_id: '3',
-        message: 'Every time I try to log in, the app crashes. I\'m using the latest version.',
-        is_staff: false,
-        created_at: new Date(Date.now() - 259200000).toISOString(),
-        user_name: 'Alfian'
-      },
-      {
-        id: '302',
-        user_id: 'admin1',
-        ticket_id: '3',
-        message: 'I\'m sorry to hear about the issue. Could you please tell me what device and OS version you\'re using?',
-        is_staff: true,
-        created_at: new Date(Date.now() - 172800000).toISOString(),
-        user_name: 'Admin User'
-      },
-      {
-        id: '303',
-        user_id: 'user3',
-        ticket_id: '3',
-        message: 'I\'m using an iPhone 12 with iOS 15.5.',
-        is_staff: false,
-        created_at: new Date(Date.now() - 86400000).toISOString(),
-        user_name: 'Alfian'
-      }
-    ]
-  };
-  
   // Render the component
   return (
     <div className="min-h-screen bg-gray-100">
@@ -699,29 +704,17 @@ const AdminSupportPage: React.FC = () => {
                           onChange={e => setReply(e.target.value)}
                           placeholder="Type your reply..."
                           required
-                          disabled={sending}
+                          
                           rows={3}
                         />
                       </div>
                       <button
                         className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed h-10"
                         type="submit"
-                        disabled={sending || !reply.trim()}
+                        disabled={!reply.trim()}
                       >
-                        {sending ? (
-                          <>
-                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Sending...
-                          </>
-                        ) : (
-                          <>
-                            <Send className="-ml-1 mr-2 h-4 w-4" />
-                            Send
-                          </>
-                        )}
+                        <Send className="-ml-1 mr-2 h-4 w-4" />
+                        Send
                       </button>
                     </form>
                   </div>
@@ -779,6 +772,7 @@ const AdminSupportPage: React.FC = () => {
       </div>
     </div>
   );
-};
+
+}
 
 export default AdminSupportPage;

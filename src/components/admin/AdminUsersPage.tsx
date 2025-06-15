@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import { UserRole } from '../../utils/roleAccess';
-import { users as mockUsers } from '../../utils/mockData';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
@@ -14,16 +13,12 @@ interface UserWithCreatedAt extends UserType {
   created_at?: string;
 }
 
+
 type RoleFilter = 'user' | 'admin' | 'manager' | '';
 
 const AdminUsersPage: React.FC = () => {
   const { currentUser } = useAuth();
   const userRole = (currentUser?.role as UserRole) || 'user';
-
-  if (userRole !== 'admin' && userRole !== 'manager') {
-    return <div className="p-6 text-red-600 font-semibold">Not authorized to view this page.</div>;
-  }
-
   const [users, setUsers] = useState<UserWithCreatedAt[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -33,7 +28,6 @@ const AdminUsersPage: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('user');
   const pageSize = 10;
-  
   // New user state
   const [newUser, setNewUser] = useState({
     name: '',
@@ -61,7 +55,23 @@ const AdminUsersPage: React.FC = () => {
         });
         const data = await res.json();
         if (data.success) {
-          setUsers(data.data);
+          setUsers(
+            data.data.map((item: {
+              id: string;
+              name: string;
+              email: string;
+              role: string;
+              created_at: string;
+              points: number;
+            }) => ({
+              id: item.id,
+              name: item.name,
+              email: item.email,
+              role: item.role,
+              created_at: item.created_at,
+              points: item.points,
+            }))
+          );
           if (data.pagination && data.pagination.totalPages) {
             setTotalPages(data.pagination.totalPages);
           } else {
@@ -76,6 +86,11 @@ const AdminUsersPage: React.FC = () => {
     };
     fetchUsers();
   }, [currentUser, page, roleFilter, searchTerm]);
+
+  if (userRole !== 'admin' && userRole !== 'manager') {
+    return <div className="p-6 text-red-600 font-semibold">Not authorized to view this page.</div>;
+  }
+
 
   // No need to filter here, backend handles filtering
   const filteredUsers = users;
@@ -120,7 +135,7 @@ const AdminUsersPage: React.FC = () => {
       return;
     }
     try {
-      const token = (currentUser as any)?.token;
+      const token = typeof currentUser === 'object' && currentUser && 'token' in currentUser ? (currentUser as { token: string }).token : undefined;
       const res = await fetch(`http://localhost:3000/api/users/${editingUser.id}`, {
         method: 'PUT',
         headers: {
@@ -146,7 +161,7 @@ const AdminUsersPage: React.FC = () => {
       } else {
         alert('Failed to update user.');
       }
-    } catch (err) {
+    } catch {
       alert('Failed to update user.');
     }
   };
@@ -171,7 +186,7 @@ const AdminUsersPage: React.FC = () => {
     if (!editingUser) return;
     if (!window.confirm(`Are you sure you want to delete user '${editingUser.name}'? This action cannot be undone.`)) return;
     try {
-      const token = (currentUser as any)?.token;
+      const token = typeof currentUser === 'object' && currentUser && 'token' in currentUser ? (currentUser as { token: string }).token : undefined;
       const res = await fetch(`http://localhost:3000/api/users/${editingUser.id}`, {
         method: 'DELETE',
         headers: {
@@ -187,7 +202,7 @@ const AdminUsersPage: React.FC = () => {
       } else {
         alert('Failed to delete user.');
       }
-    } catch (err) {
+    } catch {
       alert('Failed to delete user.');
     }
   };
@@ -260,7 +275,7 @@ const AdminUsersPage: React.FC = () => {
                     </td>
                   </tr>
                 ) : (
-                  filteredUsers.map((user: UserWithCreatedAt, idx: number) => (
+                  filteredUsers.map((user: UserWithCreatedAt) => (
                     <tr key={user.id} className="hover:bg-gray-50">
                       <td className="py-3 px-4 text-sm font-medium text-gray-900">
                         <div className="flex items-center">

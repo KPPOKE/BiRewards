@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Card, { CardHeader, CardTitle, CardContent, CardFooter } from '../ui/Card';
@@ -33,8 +33,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onRegisterClick }) => 
       } else {
         setError('Invalid email or password');
       }
-    } catch (err) {
-      setError('An error occurred during login. Please try again.');
+    } catch {
+      setError('Login failed. Please check your credentials.');
     }
   };
 

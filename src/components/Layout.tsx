@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { 
   Home, 
   Gift, 
@@ -79,7 +79,7 @@ const [notifications, setNotifications] = useState<Notification[]>([]);
             { id: '1', message: 'Welcome to Bi Rewards!', read: false, createdAt: new Date().toISOString() },
           ]);
         }
-      } catch (error) {
+      } catch {
         setNotifications([
           { id: '1', message: 'Welcome to Bi Rewards!', read: false, createdAt: new Date().toISOString() },
         ]);

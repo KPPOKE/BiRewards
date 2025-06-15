@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import { Tag, Plus, X, Save } from 'lucide-react';
 
 // Flag to disable automatic API calls in development to prevent infinite loops
@@ -39,7 +39,7 @@ const CustomerTags: React.FC<CustomerTagsProps> = ({ userId, onTagsChange }) => 
 
 
   // Fetch user's tags
-  const fetchUserTags = async () => {
+  const fetchUserTags = React.useCallback(async () => {
     try {
       setLoading(true);
       setError('');
@@ -58,14 +58,17 @@ const CustomerTags: React.FC<CustomerTagsProps> = ({ userId, onTagsChange }) => 
       } else {
         throw new Error(`API error: ${res.status}`);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      let message = 'Failed to load user tags';
+      if (err instanceof Error) {
+        message = err.message;
+      }
       console.error('Error fetching user tags:', err);
-      
-      setError(err.message || 'Failed to load user tags');
+      setError(message);
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
 
   // Fetch all available tags
   const fetchAllTags = async () => {
@@ -84,10 +87,13 @@ const CustomerTags: React.FC<CustomerTagsProps> = ({ userId, onTagsChange }) => 
       } else {
         throw new Error(`API error: ${res.status}`);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      let message = 'Failed to load all tags';
+      if (err instanceof Error) {
+        message = err.message;
+      }
       console.error('Error fetching all tags:', err);
-      
-      console.error('Error fetching all tags:', err);
+      setError(message);
     }
   };
 
@@ -120,9 +126,13 @@ const CustomerTags: React.FC<CustomerTagsProps> = ({ userId, onTagsChange }) => 
       setNewTagColor('#3B82F6');
       setNewTagDescription('');
       setIsAdding(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      let message = 'Failed to create tag';
+      if (err instanceof Error) {
+        message = err.message;
+      }
       console.error('Error creating tag:', err);
-      setError(err.message || 'Failed to create tag');
+      setError(message);
     } finally {
       setIsCreatingTag(false);
     }
@@ -157,9 +167,13 @@ const CustomerTags: React.FC<CustomerTagsProps> = ({ userId, onTagsChange }) => 
       setShowTagSelector(false);
       setSelectedTagIds([]);
       if (onTagsChange) onTagsChange();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      let message = 'Failed to add tags';
+      if (err instanceof Error) {
+        message = err.message;
+      }
       console.error('Error adding tags to user:', err);
-      setError(err.message || 'Failed to add tags');
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -183,9 +197,13 @@ const CustomerTags: React.FC<CustomerTagsProps> = ({ userId, onTagsChange }) => 
 
       setTags(prev => prev.filter(tag => tag.id !== tagId));
       if (onTagsChange) onTagsChange();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      let message = 'Failed to remove tag';
+      if (err instanceof Error) {
+        message = err.message;
+      }
       console.error('Error removing tag:', err);
-      setError(err.message || 'Failed to remove tag');
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -212,7 +230,7 @@ const CustomerTags: React.FC<CustomerTagsProps> = ({ userId, onTagsChange }) => 
         initialLoadDone.current = true;
       }
     }
-  }, [userId]);
+  }, [userId, fetchUserTags]);
 
   if (!isAuthorized) {
     return null;
@@ -373,6 +391,7 @@ const CustomerTags: React.FC<CustomerTagsProps> = ({ userId, onTagsChange }) => 
       </div>
     </div>
   );
-};
+
+}
 
 export default CustomerTags;

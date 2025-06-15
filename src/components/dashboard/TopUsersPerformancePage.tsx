@@ -10,7 +10,7 @@ interface TopUser {
   total_purchase: number;
 }
 
-function formatRupiah(amount: any): string {
+function formatRupiah(amount: number | string | undefined | null): string {
   const num = typeof amount === 'number' ? amount : Number(amount);
   if (isNaN(num)) return 'Rp0,00';
   return 'Rp' + num

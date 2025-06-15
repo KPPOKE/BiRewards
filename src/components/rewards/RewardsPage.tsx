@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import { useLoyalty } from '../../context/LoyaltyContext';
 import { Voucher } from '../../types';
 import Card, { CardHeader, CardTitle, CardContent, CardFooter } from '../ui/Card';
@@ -143,7 +143,7 @@ const RewardsPage: React.FC = () => {
         setRedeemSuccess(null);
         setTimeout(() => setRedeemError(null), 3000);
       }
-    } catch (error) {
+    } catch {
       setRedeemError('An error occurred. Please try again.');
       setRedeemSuccess(null);
       setTimeout(() => setRedeemError(null), 3000);

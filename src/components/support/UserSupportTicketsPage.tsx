@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { MessageCircle, AlertCircle, HelpCircle } from 'lucide-react';
 
@@ -44,7 +44,7 @@ const UserSupportTicketsPage: React.FC = () => {
         } else {
           setError(data.message || 'Failed to load tickets');
         }
-      } catch (err) {
+      } catch {
         setError('Network error. Please try again.');
       }
       setLoading(false);

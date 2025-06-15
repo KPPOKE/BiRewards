@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import { UserRole } from '../../utils/roleAccess';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
@@ -42,7 +42,7 @@ const AddPointsPage: React.FC = () => {
       } else {
         setError(pointsData.error?.message || 'Failed to update points');
       }
-    } catch (err) {
+    } catch {
       setError('Failed to update points');
     }
     setLoading(false);

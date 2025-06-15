@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import Cropper from 'react-easy-crop';
 import Slider from '@mui/material/Slider';
 import Modal from '@mui/material/Modal';
@@ -24,18 +24,18 @@ const UserProfilePage: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(currentUser?.name || '');
   const [email, setEmail] = useState(currentUser?.email || '');
-  const [phone, setPhone] = useState((currentUser as any)?.phone || '');
-  const [profileImage, setProfileImage] = useState((currentUser as any)?.profile_image || '');
+  const [phone, setPhone] = useState(currentUser && 'phone' in currentUser ? (currentUser as UserProfile).phone || '' : '');
+  const [profileImage, setProfileImage] = useState(currentUser && 'profile_image' in currentUser ? (currentUser as UserProfile).profile_image || '' : '');
   const [newImage, setNewImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
   const [showCropper, setShowCropper] = useState(false);
 
-  const token = (currentUser as any)?.token;
+  const token = (currentUser && typeof currentUser === 'object' && 'token' in currentUser) ? (currentUser as { token: string }).token : undefined;
   const handleUpdate = async () => {
     setMessage('');
     // 1. Update name, email, phone
@@ -53,10 +53,10 @@ const UserProfilePage: React.FC = () => {
       name,
       email,
       phone,
-      profile_image: (currentUser as any)?.profile_image,
-      role: (currentUser as any)?.role,
-      points: (currentUser as any)?.points,
-      createdAt: (currentUser as any)?.createdAt
+      profile_image: currentUser && 'profile_image' in currentUser ? (currentUser as UserProfile).profile_image : undefined,
+      role: currentUser && 'role' in currentUser ? (currentUser as UserProfile).role : undefined,
+      points: currentUser && 'points' in currentUser ? (currentUser as UserProfile).points : undefined,
+      createdAt: currentUser && 'createdAt' in currentUser ? (currentUser as UserProfile).createdAt : undefined
     };
     if (response.ok) {
       const data = await response.json();
@@ -79,7 +79,7 @@ const UserProfilePage: React.FC = () => {
           setProfileImage(imgData.data.profile_image);
         }
       }
-      setCurrentUser(updatedUser as any);
+      setCurrentUser(updatedUser);
       setMessage('Profile updated successfully!');
       setIsEditing(false);
       setNewImage(null);
@@ -188,7 +188,7 @@ const UserProfilePage: React.FC = () => {
         <>
           <p><strong>Name:</strong> {currentUser.name}</p>
           <p><strong>Email:</strong> {currentUser.email}</p>
-          <p><strong>Phone:</strong> {(currentUser as any).phone || '-'}</p>
+          <p><strong>Phone:</strong> {currentUser && typeof currentUser === 'object' && 'phone' in currentUser ? (currentUser as { phone?: string }).phone || '-' : '-'}</p>
           <button
             onClick={() => setIsEditing(true)}
             className="bg-primary-500 text-white px-4 py-2 rounded mt-4"
