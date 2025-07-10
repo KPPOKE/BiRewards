@@ -37,11 +37,11 @@ const [chartData, setChartData] = useState<ChartData[]>([]);
           let formattedData: ChartData[] = [];
           if (filter === 'month' || filter === 'day') {
             // Use data as-is (monthly)
-            const months = totalUsers.map((u: { label: string }) => u.label);
+            const months = totalUsers.map((u: { month: string }) => u.month);
 formattedData = months.map((month: string): ChartData => ({
   label: month,
-  total_users: Number(totalUsers.find((u: { label: string; total_users: number }) => u.label === month)?.total_users || 0),
-  new_users: Number(userGrowth.find((u: { label: string; new_users: number }) => u.label === month)?.new_users || 0),
+  total_users: Number(totalUsers.find((u: { month: string; total_users: number }) => u.month === month)?.total_users || 0),
+  new_users: Number(userGrowth.find((u: { month: string; new_users: number }) => u.month === month)?.new_users || 0),
 }));
           } else if (filter === 'year') {
             // Aggregate by year
