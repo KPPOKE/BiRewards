@@ -1,13 +1,14 @@
 {
-  "name": "vite-react-typescript-starter",
+  "name": "birewards",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node backend/server.js"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -48,8 +49,8 @@
     "typescript-eslint": "^8.3.0",
     "vite": "^5.4.2"
   },
-  "description": "projctkp",
-  "main": "eslint.config.js",
+  "description": "BiRewards loyalty program application",
+  "main": "backend/server.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/KPPOKE/BiRewards.git"
@@ -60,5 +61,8 @@
   "bugs": {
     "url": "https://github.com/KPPOKE/BiRewards/issues"
   },
-  "homepage": "https://github.com/KPPOKE/BiRewards#readme"
+  "homepage": "https://github.com/KPPOKE/BiRewards#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }
