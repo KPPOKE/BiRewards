@@ -5,6 +5,7 @@ import { LoyaltyProvider } from './context/LoyaltyContext';
 import Layout from './components/Layout';
 import LoginForm from './components/auth/LoginForm';
 import RegisterForm from './components/auth/RegisterForm';
+import ForgotPasswordForm from './components/auth/ForgotPasswordForm';
 import UserDashboard from './components/dashboard/UserDashboard';
 import RewardsPage from './components/rewards/RewardsPage';
 import TransactionsPage from './components/transactions/TransactionsPage';
@@ -40,7 +41,7 @@ const App: React.FC = () => {
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, currentUser } = useAuth();
-  const [isRegistering, setIsRegistering] = useState(false);
+  const [authView, setAuthView] = useState('login'); // 'login', 'register', 'forgotPassword'
   const [activePage, setActivePage] = useState('dashboard');
 
   React.useEffect(() => {
@@ -65,22 +66,29 @@ const AppContent: React.FC = () => {
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Bi Rewards</h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            {isRegistering
-              ? "Create an account to start earning rewards"
-              : "Sign in to manage your loyalty rewards"}
+            {authView === 'register' && "Create an account to start earning rewards"}
+            {authView === 'login' && "Sign in to manage your loyalty rewards"}
+            {authView === 'forgotPassword' && "Reset your password"}
           </p>
         </div>
 
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-          {isRegistering ? (
-            <RegisterForm
-              onSuccess={() => setActivePage('dashboard')}
-              onLoginClick={() => setIsRegistering(false)}
-            />
-          ) : (
+          {authView === 'login' && (
             <LoginForm
               onSuccess={() => setActivePage('dashboard')}
-              onRegisterClick={() => setIsRegistering(true)}
+              onRegisterClick={() => setAuthView('register')}
+              onForgotPasswordClick={() => setAuthView('forgotPassword')}
+            />
+          )}
+          {authView === 'register' && (
+            <RegisterForm
+              onSuccess={() => setActivePage('dashboard')}
+              onLoginClick={() => setAuthView('login')}
+            />
+          )}
+          {authView === 'forgotPassword' && (
+            <ForgotPasswordForm 
+              onLoginClick={() => setAuthView('login')}
             />
           )}
         </div>

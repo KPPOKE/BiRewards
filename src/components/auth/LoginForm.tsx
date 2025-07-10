@@ -8,9 +8,10 @@ import { Mail, Lock, LogIn } from 'lucide-react';
 interface LoginFormProps {
   onSuccess?: () => void;
   onRegisterClick: () => void;
+  onForgotPasswordClick: () => void;
 }
 
-const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onRegisterClick }) => {
+const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onRegisterClick, onForgotPasswordClick }) => {
   const { login, isLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -82,6 +83,15 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onRegisterClick }) => 
             Login
           </Button>
         </form>
+        <div className="text-center mt-4">
+          <button
+            onClick={onForgotPasswordClick}
+            className="text-sm text-gray-600 hover:text-primary-500"
+            type="button"
+          >
+            Forgot Password?
+          </button>
+        </div>
       </CardContent>
       <CardFooter className="flex justify-center">
         <p className="text-sm text-gray-600">

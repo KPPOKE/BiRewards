@@ -15,6 +15,109 @@ const transporter = nodemailer.createTransport({
 });
 
 
+// Forgot password - Step 1: Request OTP
+export const forgotPassword = async (req, res, next) => {
+  const { email } = req.body;
+  try {
+    const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    if (userResult.rows.length === 0) {
+      // To prevent email enumeration, we send a success response even if the user doesn't exist.
+      console.log(`Password reset requested for non-existent email: ${email}`);
+      return res.json({ success: true, message: 'If a user with this email exists, a password reset OTP has been sent.' });
+    }
+    const user = userResult.rows[0];
+
+    // Generate a 6-digit OTP
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+
+    // First, delete any existing OTP for this email to ensure a clean slate.
+    await pool.query('DELETE FROM otps WHERE email = $1', [email]);
+
+    // Now, insert the new OTP, matching the existing table schema.
+    await pool.query(
+      'INSERT INTO otps (user_id, email, phone, otp_code, expires_at, verified) VALUES ($1, $2, $3, $4, $5, false)',
+      [user.id, email, user.phone, otpCode, expiresAt]
+    );
+
+    // Send OTP via email (ensure transporter is configured in your .env file)
+    await transporter.sendMail({
+      from: process.env.GMAIL_USER,
+      to: email,
+      subject: 'Your Password Reset OTP',
+      text: `Your OTP for password reset is: ${otpCode}. It will expire in 10 minutes.`,
+      html: `<p>Your OTP for password reset is: <b>${otpCode}</b>. It will expire in 10 minutes.</p>`
+    });
+
+    res.json({ success: true, message: 'An OTP has been sent to your email address.' });
+  } catch (error) {
+    console.error('FORGOT PASSWORD ERROR:', error);
+    next(new AppError('Failed to process forgot password request. Please try again later.', 500));
+  }
+};
+
+// Reset password - Step 2: Verify OTP and set new password
+export const resetPassword = async (req, res, next) => {
+  const { email, otp, newPassword } = req.body;
+  try {
+    // Find the OTP record, ensuring it's not marked as verified and not expired
+    const otpResult = await pool.query('SELECT * FROM otps WHERE email = $1 AND otp_code = $2 AND verified = false AND expires_at > NOW()', [email, otp]);
+    if (otpResult.rows.length === 0) {
+      return next(new AppError('Invalid or expired OTP.', 400));
+    }
+    const otpRecord = otpResult.rows[0];
+
+    // The check for expiration is now handled in the initial SQL query, so this block can be removed.
+    // This makes the logic cleaner and more efficient.
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update the user's password
+    await pool.query('UPDATE users SET password = $1, updated_at = NOW() WHERE id = $2', [hashedPassword, otpRecord.user_id]);
+
+    // Instead of deleting the OTP, we'll mark it as verified to keep a record of its use.
+    await pool.query('UPDATE otps SET verified = true WHERE id = $1', [otpRecord.id]);
+
+    res.json({ success: true, message: 'Password has been reset successfully.' });
+  } catch (error) {
+    next(new AppError(error.message || 'Failed to reset password', 500));
+  }
+};
+
+// Change password for authenticated user
+export const changePassword = async (req, res, next) => {
+  const userId = req.user.id;
+  const { current_password, new_password } = req.body;
+  if (!current_password || !new_password) {
+    return next(new AppError('Current password and new password are required', 400));
+  }
+  try {
+    // Get user from DB
+    const userResult = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
+    if (userResult.rows.length === 0) {
+      return next(new AppError('User not found', 404));
+    }
+    const user = userResult.rows[0];
+    // Compare current password
+    const isMatch = await bcrypt.compare(current_password, user.password);
+    if (!isMatch) {
+      return next(new AppError('Current password is incorrect', 401));
+    }
+    // Validate new password (min 8 chars, at least 1 letter and 1 number)
+    const strongEnough = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d!@#$%^&*]{8,}$/.test(new_password);
+    if (!strongEnough) {
+      return next(new AppError('New password must be at least 8 characters and contain a letter and a number', 400));
+    }
+    // Hash new password
+    const hashed = await bcrypt.hash(new_password, 10);
+    await pool.query('UPDATE users SET password = $1, updated_at = NOW() WHERE id = $2', [hashed, userId]);
+    res.json({ success: true, message: 'Password changed successfully.' });
+  } catch (error) {
+    next(new AppError(error.message || 'Failed to change password', 500));
+  }
+};
+
 // Get all users with pagination
 export const getAllUsers = async (req, res, next) => {
   const { page = 1, limit = 10, role, search } = req.query;

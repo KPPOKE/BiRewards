@@ -37,6 +37,14 @@ export const schemas = {
     login: Joi.object({
       email: Joi.string().required().email(),
       password: Joi.string().required().min(6)
+    }),
+    forgotPassword: Joi.object({
+      email: Joi.string().required().email()
+    }),
+    resetPassword: Joi.object({
+      email: Joi.string().required().email(),
+      otp: Joi.string().required().length(6),
+      newPassword: Joi.string().required().min(8)
     })
   },
   reward: {

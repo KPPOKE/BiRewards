@@ -11,7 +11,9 @@ import {
   getOwnerUsersStats,
   getOwnerMetrics,
   getUserByPhone,
-  verifyOtp
+  verifyOtp,
+  forgotPassword,
+  resetPassword
 } from '../Controllers/userController.js'
 import multer from 'multer';
 import path from 'path';
@@ -58,10 +60,16 @@ router.get('/:id/profile', protect, getUserProfile);
 router.post('/:id/profile-image', protect, upload.single('profile_image'), uploadProfileImage);
 router.put('/:id/profile', protect, updateUser);
 
+// Password change route
+import { changePassword } from '../Controllers/userController.js';
+router.post('/change-password', protect, changePassword);
+
 // Public routes (no authentication required)
 router.post('/login', validate(schemas.user.login), loginUser);
 router.post('/verify-otp', verifyOtp);
 router.post('/register', validate(schemas.user.create), createUser);
+router.post('/forgot-password', validate(schemas.user.forgotPassword), forgotPassword);
+router.post('/reset-password', validate(schemas.user.resetPassword), resetPassword);
 
 // Owner stats route (admin/owner/manager)
 router.get('/owner/stats', protect, authorize('owner', 'admin', 'manager', 'cashier', 'waiter'), getOwnerStats);
