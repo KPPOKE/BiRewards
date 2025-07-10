@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_URL } from '../../utils/api';
 import { Star, Send } from 'lucide-react';
 
 interface SatisfactionRatingProps {
@@ -34,7 +35,7 @@ const SatisfactionRating: React.FC<SatisfactionRatingProps> = ({
       setLoading(true);
       setError('');
       
-      const res = await fetch(`http://localhost:3000/api/customers/tickets/${ticketId}/satisfaction`, {
+      const res = await fetch(`${API_URL}/customers/tickets/${ticketId}/satisfaction`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

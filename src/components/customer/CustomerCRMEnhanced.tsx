@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { API_URL } from '../../utils/api';
 import { useAuth } from '../../context/useAuth';
 import { Tag, User, Clock, Star, AlertCircle, RefreshCw } from 'lucide-react';
 import CustomerTags from './CustomerTags';
@@ -54,7 +55,7 @@ const CustomerCRMEnhanced: React.FC<CustomerCRMEnhancedProps> = ({ userId, ticke
       setError('');
       
       // Attempt to fetch from API
-      const res = await fetch(`http://localhost:3000/api/users/${userId}`, {
+      const res = await fetch(`${API_URL}/users/${userId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -249,7 +250,7 @@ const CustomerCRMEnhanced: React.FC<CustomerCRMEnhancedProps> = ({ userId, ticke
               <div className="flex-shrink-0">
                 {customer.profile_image ? (
                   <img 
-                    src={`http://localhost:3000/${customer.profile_image}`} 
+                    src={`${API_URL.replace('/api','')}/${customer.profile_image}`} 
                     alt={customer.name} 
                     className="h-20 w-20 rounded-full object-cover border-2 border-primary-200"
                   />

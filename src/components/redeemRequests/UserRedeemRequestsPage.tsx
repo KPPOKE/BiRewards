@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_URL } from '../../utils/api';
 import Card, { CardHeader, CardTitle, CardContent, CardFooter } from '../ui/Card';
 import Button from '../ui/Button';
 import { Gift, Info, AlertTriangle, CheckCircle, Clock, XCircle } from 'lucide-react';
@@ -27,7 +28,7 @@ const UserRedeemRequestsPage: React.FC = () => {
         setLoading(true);
         setError(null);
         
-        const response = await fetch('http://localhost:3000/api/redeem-requests/my-requests', {
+        const response = await fetch(`${API_URL}/redeem-requests/my-requests`, {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -58,7 +59,7 @@ const UserRedeemRequestsPage: React.FC = () => {
     try {
       setError(null);
       
-      const response = await fetch(`http://localhost:3000/api/redeem-requests/${requestId}/use-voucher`, {
+      const response = await fetch(`${API_URL}/redeem-requests/${requestId}/use-voucher`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

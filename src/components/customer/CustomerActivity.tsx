@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { API_URL } from '../../utils/api';
 import { Clock, User, MessageCircle, Star, AlertCircle, CheckCircle, RefreshCw } from 'lucide-react';
 
 // Flag to disable automatic API calls in development to prevent infinite loops
@@ -46,7 +47,7 @@ const CustomerActivity: React.FC<CustomerActivityProps> = ({ userId, refreshTrig
       setLoading(true);
       setError('');
       
-      const res = await fetch(`http://localhost:3000/api/customers/users/${userId}/activity?limit=10&offset=${offset}`, {
+      const res = await fetch(`${API_URL}/customers/users/${userId}/activity?limit=10&offset=${offset}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -203,7 +204,7 @@ const CustomerActivity: React.FC<CustomerActivityProps> = ({ userId, refreshTrig
                               />
                             ))}
                           </div>
-                          {activity.metadata.feedback && (
+                          {typeof activity.metadata.feedback === 'string' && activity.metadata.feedback && (
                             <span className="ml-2 text-xs text-gray-600 italic">
                               "{activity.metadata.feedback}"
                             </span>

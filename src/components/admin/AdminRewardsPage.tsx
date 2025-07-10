@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_URL } from '../../utils/api';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
@@ -55,7 +56,7 @@ const AdminRewardsPage: React.FC = () => {
     setError(null);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:3000/api/rewards', {
+      const res = await fetch(`${API_URL}/rewards`, {
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
@@ -110,7 +111,7 @@ const AdminRewardsPage: React.FC = () => {
     // Send to backend
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:3000/api/rewards', {
+      const res = await fetch(`${API_URL}/rewards`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -171,7 +172,7 @@ const AdminRewardsPage: React.FC = () => {
     // Send to backend
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:3000/api/rewards/${currentVoucher.id}`, {
+      const res = await fetch(`${API_URL}/rewards/${currentVoucher.id}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -219,7 +220,7 @@ const AdminRewardsPage: React.FC = () => {
     if (!window.confirm(`Are you sure you want to delete reward '${currentVoucher.title}'? This action cannot be undone.`)) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:3000/api/rewards/${currentVoucher.id}`, {
+      const res = await fetch(`${API_URL}/rewards/${currentVoucher.id}`, {
         method: 'DELETE',
         headers: { 
           'Content-Type': 'application/json',

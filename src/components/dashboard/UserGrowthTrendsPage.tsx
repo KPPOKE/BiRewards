@@ -26,8 +26,7 @@ const [chartData, setChartData] = useState<ChartData[]>([]);
 
   useEffect(() => {
     setLoading(true);
-    const baseUrl = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
-    fetch(`${baseUrl}/users/owner/metrics`, {
+    fetch(`${API_URL}/users/owner/metrics`, {
       headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
       credentials: 'include',
     })

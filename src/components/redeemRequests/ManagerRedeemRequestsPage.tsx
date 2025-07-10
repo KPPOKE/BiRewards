@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { API_URL } from '../../utils/api';
 import {
   CheckCircle,
   XCircle,
@@ -58,7 +59,7 @@ const ManagerRedeemRequestsPage: React.FC = () => {
         queryParams.append('endDate', endDate);
       }
       
-      const response = await fetch(`http://localhost:3000/api/redeem-requests/all?${queryParams.toString()}`, {
+      const response = await fetch(`${API_URL}/redeem-requests/all?${queryParams.toString()}`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -93,7 +94,7 @@ const ManagerRedeemRequestsPage: React.FC = () => {
     try {
       setError(null);
       
-      const response = await fetch(`http://localhost:3000/api/redeem-requests/${id}/process`, {
+      const response = await fetch(`${API_URL}/redeem-requests/${id}/process`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

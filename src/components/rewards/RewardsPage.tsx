@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_URL } from '../../utils/api';
 import { useAuth } from '../../context/useAuth';
 import { useLoyalty } from '../../context/LoyaltyContext';
 import { Voucher } from '../../types';
@@ -103,7 +104,7 @@ const RewardsPage: React.FC = () => {
       }
       
       // Create a redeem request instead of direct redemption
-      const response = await fetch('http://localhost:3000/api/redeem-requests/redeem', {
+      const response = await fetch(`${API_URL}/redeem-requests/redeem`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

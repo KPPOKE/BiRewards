@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_URL } from '../../utils/api';
 import { useAuth } from '../../context/useAuth';
 import { User, Phone, Mail, Calendar, Award, Clock, RefreshCw, ChevronDown, ChevronUp, Tag } from 'lucide-react';
 import CustomerActivity from './CustomerActivity';
@@ -39,7 +40,7 @@ const CustomerProfile: React.FC<CustomerProfileProps> = ({ userId, onClose }) =>
   const fetchCustomerData = React.useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(`http://localhost:3000/api/users/${userId}`, {
+      const res = await fetch(`${API_URL}/users/${userId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -174,7 +175,7 @@ const CustomerProfile: React.FC<CustomerProfileProps> = ({ userId, onClose }) =>
           <div className="flex-shrink-0">
             {customer.profile_image ? (
               <img 
-                src={`http://localhost:3000/${customer.profile_image}`} 
+                src={`${API_URL.replace('/api','')}/${customer.profile_image}`} 
                 alt={customer.name} 
                 className="h-20 w-20 rounded-full object-cover border-2 border-primary-200"
               />

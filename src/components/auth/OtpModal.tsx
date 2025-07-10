@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_URL } from '../../utils/api';
 import Modal from '../ui/ConfirmModal';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
@@ -21,7 +22,7 @@ const OtpModal: React.FC<OtpModalProps> = ({ open, email, onClose, onSuccess }) 
     setSuccessMsg('');
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:3000/api/users/verify-otp', {
+      const res = await fetch(`${API_URL}/users/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp_code: otp })

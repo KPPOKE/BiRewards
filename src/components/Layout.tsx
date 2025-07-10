@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_URL } from '../utils/api';
 import { useAuth } from '../context/useAuth';
 import { 
   Home, 
@@ -66,7 +67,7 @@ const [notifications, setNotifications] = useState<Notification[]>([]);
       setLoadingNotifs(true);
       try {
         // Replace this URL with your actual notifications API endpoint
-        const res = await fetch(`http://localhost:3000/api/users/${currentUser.id}/notifications`, {
+        const res = await fetch(`${API_URL}/users/${currentUser.id}/notifications`, {
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
         });

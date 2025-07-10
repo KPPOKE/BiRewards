@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_URL } from '../../utils/api';
 import { useAuth } from '../../context/useAuth';
 import { AlertTriangle, Calendar, Save } from 'lucide-react';
 
@@ -34,7 +35,7 @@ const TicketPriority: React.FC<TicketPriorityProps> = ({
       setError('');
       setSuccess(false);
       
-      const res = await fetch(`http://localhost:3000/api/customers/tickets/${ticketId}/priority`, {
+      const res = await fetch(`${API_URL}/customers/tickets/${ticketId}/priority`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

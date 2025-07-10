@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { API_URL } from '../utils/api';
 import { useAuth } from '../context/useAuth';
 import { MessageCircle, AlertCircle, Lightbulb, HelpCircle, Clock, User, RefreshCw, Search, Filter, Send } from 'lucide-react';
 
@@ -51,9 +52,6 @@ const AdminSupportPage: React.FC = () => {
   // Add delay function to prevent rate limiting
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
   
-  // Define base API URL to avoid typos
-  const API_BASE_URL = 'http://localhost:3000/api';
-
   const fetchTickets = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -61,7 +59,7 @@ const AdminSupportPage: React.FC = () => {
       // Add a small delay to prevent rate limiting
       await delay(300);
       
-      const res = await fetch(`${API_BASE_URL}/support-tickets`, {
+      const res = await fetch(`${API_URL}/support-tickets`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token') || currentUser?.token || ''}` },
         // Add cache control to prevent duplicate requests
         cache: 'no-cache'
@@ -103,7 +101,7 @@ const AdminSupportPage: React.FC = () => {
       await delay(300);
       
       const token = localStorage.getItem('token') || currentUser?.token || '';
-      const res = await fetch(`${API_BASE_URL}/support-tickets/${ticketId}`, {
+      const res = await fetch(`${API_URL}/support-tickets/${ticketId}`, {
         headers: { Authorization: `Bearer ${token}` },
         // Add cache control to prevent duplicate requests
         cache: 'no-cache'
@@ -196,7 +194,7 @@ const AdminSupportPage: React.FC = () => {
     setError('');
     try {
       const token = localStorage.getItem('token') || currentUser?.token || '';
-      const res = await fetch(`${API_BASE_URL}/support-tickets/${selectedTicket.id}/messages`, {
+      const res = await fetch(`${API_URL}/support-tickets/${selectedTicket.id}/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -263,7 +261,7 @@ const AdminSupportPage: React.FC = () => {
       
       // Make the API call to update the ticket status
       const token = localStorage.getItem('token') || currentUser?.token || '';
-      const res = await fetch(`${API_BASE_URL}/support-tickets/${selectedTicket.id}`, {
+      const res = await fetch(`${API_URL}/support-tickets/${selectedTicket.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

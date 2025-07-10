@@ -1,4 +1,27 @@
-# BiRewards - Loyalty Rewards System
+# BiRewards
+
+## Environment Variable Setup for API URLs
+
+This project uses environment variables to set the backend API URL, ensuring seamless switching between local development and production without code changes.
+
+### Local Development
+Create a `.env` file in the project root with:
+```
+VITE_API_URL=http://localhost:3000/api
+```
+
+### Production Deployment
+Create a `.env.production` file in the project root with:
+```
+VITE_API_URL=https://api.birewards.id/api
+```
+
+- **Never hardcode API URLs in your code.** Always use the `API_URL` variable from `src/utils/api.ts` for all API calls.
+- The build process will automatically use the correct environment file based on the environment (development or production).
+- You do not need to change any URLs when switching environments—just build and deploy.
+
+---
+ - Loyalty Rewards System
 
 A modern loyalty rewards system built with React, TypeScript, and Express.js.
 

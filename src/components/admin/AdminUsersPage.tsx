@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_URL } from '../../utils/api';
 import { useAuth } from '../../context/useAuth';
 import { UserRole } from '../../utils/roleAccess';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
@@ -46,7 +47,7 @@ const AdminUsersPage: React.FC = () => {
           ...(roleFilter ? { role: roleFilter } : {}),
           ...(searchTerm ? { search: searchTerm } : {}),
         });
-        const res = await fetch(`http://localhost:3000/api/users?${params.toString()}`, {
+        const res = await fetch(`${API_URL}/users?${params.toString()}`, {
           headers: {
             'Content-Type': 'application/json',
             ...(token ? { 'Authorization': `Bearer ${token}` } : {})
@@ -136,7 +137,7 @@ const AdminUsersPage: React.FC = () => {
     }
     try {
       const token = typeof currentUser === 'object' && currentUser && 'token' in currentUser ? (currentUser as { token: string }).token : undefined;
-      const res = await fetch(`http://localhost:3000/api/users/${editingUser.id}`, {
+      const res = await fetch(`${API_URL}/users/${editingUser.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -187,7 +188,7 @@ const AdminUsersPage: React.FC = () => {
     if (!window.confirm(`Are you sure you want to delete user '${editingUser.name}'? This action cannot be undone.`)) return;
     try {
       const token = typeof currentUser === 'object' && currentUser && 'token' in currentUser ? (currentUser as { token: string }).token : undefined;
-      const res = await fetch(`http://localhost:3000/api/users/${editingUser.id}`, {
+      const res = await fetch(`${API_URL}/users/${editingUser.id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

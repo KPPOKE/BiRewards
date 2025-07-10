@@ -170,7 +170,7 @@ const AdminSupportPage: React.FC = () => {
       setLoading(true);
       setError('');
       // Attempt to fetch from API
-      const res = await fetch('http://localhost:3000/api/support-tickets', {
+      const res = await fetch(`${API_URL}/support-tickets`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -226,7 +226,7 @@ const AdminSupportPage: React.FC = () => {
       setMessageLoading(true);
       setError('');
       // Attempt to fetch from API
-      const res = await fetch(`http://localhost:3000/api/support-tickets/${ticketId}/messages`, {
+      const res = await fetch(`${API_URL}/support-tickets/${ticketId}/messages`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -314,7 +314,7 @@ const AdminSupportPage: React.FC = () => {
       setMessageLoading(true);
       setError('');
       
-      const res = await fetch(`http://localhost:3000/api/support-tickets/${selectedTicket.id}/messages`, {
+      const res = await fetch(`${API_URL}/support-tickets/${selectedTicket.id}/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -365,7 +365,7 @@ const AdminSupportPage: React.FC = () => {
     try {
       setError('');
       
-      const res = await fetch(`http://localhost:3000/api/support-tickets/${selectedTicket.id}/status`, {
+      const res = await fetch(`${API_URL}/support-tickets/${selectedTicket.id}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { API_URL } from '../../utils/api';
 import { useAuth } from '../../context/useAuth';
 import { FileText, Plus, Send, X, AlertCircle, RefreshCw } from 'lucide-react';
 
@@ -41,7 +42,7 @@ const CustomerNotes: React.FC<CustomerNotesProps> = ({ userId, onNoteAdded }) =>
       setLoading(true);
       setError('');
       
-      const res = await fetch(`http://localhost:3000/api/customers/users/${userId}/notes`, {
+      const res = await fetch(`${API_URL}/customers/users/${userId}/notes`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -74,7 +75,7 @@ const CustomerNotes: React.FC<CustomerNotesProps> = ({ userId, onNoteAdded }) =>
       setSubmitting(true);
       setError('');
       
-      const res = await fetch(`http://localhost:3000/api/customers/users/${userId}/notes`, {
+      const res = await fetch(`${API_URL}/customers/users/${userId}/notes`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

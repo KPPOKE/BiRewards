@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { API_URL } from '../../utils/api';
 import { useAuth } from '../../context/useAuth';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { MessageCircle, AlertCircle, HelpCircle } from 'lucide-react';
@@ -31,7 +32,7 @@ const UserSupportTicketsPage: React.FC = () => {
       setLoading(true);
       setError('');
       try {
-        const res = await fetch(`http://localhost:3000/api/support-tickets?user_id=${currentUser.id}`, {
+        const res = await fetch(`${API_URL}/support-tickets?user_id=${currentUser.id}`, {
           headers: {
             'Authorization': `Bearer ${currentUser.token}`,
             'Content-Type': 'application/json',

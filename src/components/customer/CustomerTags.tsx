@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { API_URL } from '../../utils/api';
 import { useAuth } from '../../context/useAuth';
 import { Tag, Plus, X, Save } from 'lucide-react';
 
@@ -44,7 +45,7 @@ const CustomerTags: React.FC<CustomerTagsProps> = ({ userId, onTagsChange }) => 
       setLoading(true);
       setError('');
       
-      const res = await fetch(`http://localhost:3000/api/customers/users/${userId}/tags`, {
+      const res = await fetch(`${API_URL}/customers/users/${userId}/tags`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -73,7 +74,7 @@ const CustomerTags: React.FC<CustomerTagsProps> = ({ userId, onTagsChange }) => 
   // Fetch all available tags
   const fetchAllTags = async () => {
     try {
-      const res = await fetch('http://localhost:3000/api/customers/tags', {
+      const res = await fetch(`${API_URL}/customers/tags`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -103,7 +104,7 @@ const CustomerTags: React.FC<CustomerTagsProps> = ({ userId, onTagsChange }) => 
 
     try {
       setIsCreatingTag(true);
-      const res = await fetch('http://localhost:3000/api/customers/tags', {
+      const res = await fetch(`${API_URL}/customers/tags`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -147,7 +148,7 @@ const CustomerTags: React.FC<CustomerTagsProps> = ({ userId, onTagsChange }) => 
 
     try {
       setLoading(true);
-      const res = await fetch(`http://localhost:3000/api/customers/users/${userId}/tags`, {
+      const res = await fetch(`${API_URL}/customers/users/${userId}/tags`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -183,7 +184,7 @@ const CustomerTags: React.FC<CustomerTagsProps> = ({ userId, onTagsChange }) => 
   const removeTag = async (tagId: string) => {
     try {
       setLoading(true);
-      const res = await fetch(`http://localhost:3000/api/customers/users/${userId}/tags/${tagId}`, {
+      const res = await fetch(`${API_URL}/customers/users/${userId}/tags/${tagId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
