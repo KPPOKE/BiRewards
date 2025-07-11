@@ -1,6 +1,6 @@
 // API utility functions for consistent API calls with authentication
 
-export const API_URL = import.meta.env.VITE_API_URL || 'https://birewards.id/api';
+export const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3000/api' : 'https://birewards.id/api');
 
 /**
  * Makes an authenticated API request
