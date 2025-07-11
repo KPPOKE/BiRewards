@@ -418,7 +418,7 @@ const [notifications, setNotifications] = useState<Notification[]>([]);
       )}
 
       {/* Main content */}
-      <main className="flex-1 sm:ml-64 pt-16 px-4 sm:px-6 lg:px-8">
+      <main className="flex-1 sm:ml-64 pt-4 sm:pt-6 lg:pt-8 px-4 sm:px-6 lg:px-8">
         {children}
       </main>
     </div>

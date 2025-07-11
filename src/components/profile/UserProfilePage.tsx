@@ -163,7 +163,7 @@ const UserProfilePage: React.FC = () => {
   if (!currentUser) return null;
 
   return (
-    <div className="p-6 max-w-xl mx-auto mt-10 bg-white rounded shadow">
+    <div className="p-6 max-w-xl mx-auto bg-white rounded-lg shadow-md">
       <h2 className="text-2xl font-bold mb-4">Your Profile</h2>
       {message && <p className={`mb-4 text-sm ${message.includes('success') ? 'text-green-600' : 'text-red-600'}`}>{message}</p>}
 
