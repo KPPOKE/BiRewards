@@ -20,7 +20,14 @@ interface Reward {
 const ManagerDashboard: React.FC = () => {
   const { currentUser } = useAuth();
   const { vouchers, isLoading: loading, refreshRewards } = useLoyalty();
-  const rewards = vouchers as unknown as Reward[];
+  const rewards: Reward[] = vouchers.map(v => ({
+    id: v.id,
+    title: v.title,
+    points_cost: v.pointsCost,
+    is_active: v.isActive,
+    redemptions: 0, // Placeholder, as this data is not in the context
+    created_at: '', // Placeholder
+  }));
   const token = currentUser?.token;
   const userRole = currentUser?.role;
 
@@ -61,7 +68,8 @@ const ManagerDashboard: React.FC = () => {
     }
   };
 
-  const handleDeleteReward = async (rewardId: string) => {
+  const handleDeleteReward = async (reward: Reward) => {
+    const rewardId = reward.id;
     if (!window.confirm('Are you sure you want to delete this reward?')) return;
     try {
       const res = await fetch(`${API_URL}/rewards/${rewardId}`, {
@@ -162,7 +170,7 @@ const ManagerDashboard: React.FC = () => {
                       </td>
                       <td className="py-2 px-4 text-right space-x-2">
                         <Button variant="ghost" size="sm" leftIcon={<Pencil size={14} />} onClick={() => handleEditClick(reward)}>Edit</Button>
-                        <Button variant="danger" size="sm" leftIcon={<Trash size={14} />} onClick={() => handleDeleteReward(reward.id)}>Delete</Button>
+                        <Button variant="danger" size="sm" leftIcon={<Trash size={14} />} onClick={() => handleDeleteReward(reward)}>Delete</Button>
                       </td>
                     </tr>
                   ))
