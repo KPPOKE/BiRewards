@@ -1,6 +1,3 @@
-// API utility functions for consistent API calls with authentication
-
-// IMPORTANT: Replace 'https://your-production-api-url.com/api' with the actual URL of your deployed backend API.
 export const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3000/api' : 'https://birewards.id/api');
 
 /**
