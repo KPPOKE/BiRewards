@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { API_URL } from '../../utils/api';
-// NOTE: You must run 'npm install xlsx' for the export feature to work
+
 import { useAuth } from '../../context/useAuth';
-import { UserRole } from '../../utils/roleAccess';
+import { useLoyalty } from '../../context/LoyaltyContext';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import { Gift, Pencil, Trash, Plus, Calendar } from 'lucide-react';
@@ -19,54 +19,17 @@ interface Reward {
 
 const ManagerDashboard: React.FC = () => {
   const { currentUser } = useAuth();
-  const userRole = (currentUser?.role as UserRole) || 'user';
-  const token = localStorage.getItem('token');
+  const { vouchers, isLoading: loading, refreshRewards } = useLoyalty();
+  const rewards = vouchers as unknown as Reward[];
+  const token = currentUser?.token;
+  const userRole = currentUser?.role;
 
-  const [rewards, setRewards] = useState<Reward[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingReward, setEditingReward] = useState<Reward | null>(null);
   const [editForm, setEditForm] = useState({ title: '', points_cost: 0, is_active: true });
   const [showAddModal, setShowAddModal] = useState(false);
   const [addForm, setAddForm] = useState({ title: '', points_cost: 0, is_active: true });
   const [addLoading, setAddLoading] = useState(false);
-  
-
-
-  useEffect(() => {
-    if (userRole !== 'manager') return;
-    setLoading(true);
-    Promise.all([
-      fetch(`${API_URL}/rewards`, {
-        headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
-        credentials: 'include',
-      }).then(res => res.json()),
-      fetch(`${API_URL}/users/owner/metrics`, {
-        headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
-        credentials: 'include',
-      }).then(res => res.json()),
-      fetch(`${API_URL}/activity-logs`, {
-        headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
-        credentials: 'include',
-      }).then(res => res.json()),
-    ])
-      .then(([rewardsRes, metricsRes, logsRes]) => {
-        if (rewardsRes.success && metricsRes.success && logsRes.success) {
-          setRewards(rewardsRes.data);
-          // removed setTopUsers (no longer needed)metricsRes.data.topUsers || []);
-          // removed setActivityLogs (no longer needed)logsRes.data || []);
-          setError(null);
-        } else {
-          setError('Failed to fetch dashboard data');
-        }
-        setLoading(false);
-      })
-      .catch(() => {
-        setError('Failed to fetch dashboard data');
-        setLoading(false);
-      });
-  }, [userRole, token]);
 
   const handleEditClick = (reward: Reward) => {
     setEditingReward(reward);
@@ -87,8 +50,7 @@ const ManagerDashboard: React.FC = () => {
         body: JSON.stringify(editForm),
       });
       if (res.ok) {
-        const updated = await res.json();
-        setRewards(rewards.map(r => r.id === editingReward.id ? { ...r, ...updated.data } : r));
+        refreshRewards();
         setShowEditModal(false);
         setEditingReward(null);
       } else {
@@ -111,7 +73,7 @@ const ManagerDashboard: React.FC = () => {
         credentials: 'include',
       });
       if (res.ok) {
-        setRewards(rewards.filter(r => r.id !== rewardId));
+        refreshRewards();
       } else {
         alert('Failed to delete reward.');
       }
@@ -133,8 +95,7 @@ const ManagerDashboard: React.FC = () => {
         body: JSON.stringify(addForm),
       });
       if (res.ok) {
-        const data = await res.json();
-        setRewards([data.data, ...rewards]);
+        refreshRewards();
         setShowAddModal(false);
         setAddForm({ title: '', points_cost: 0, is_active: true });
       } else {
@@ -154,9 +115,7 @@ const ManagerDashboard: React.FC = () => {
     return <div className="p-6">Loading dashboard...</div>;
   }
 
-  if (error) {
-    return <div className="p-6 text-red-600">{error}</div>;
-  }
+  
 
   return (
     <div className="p-6 space-y-8">
@@ -181,31 +140,39 @@ const ManagerDashboard: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {rewards.map(reward => (
-                  <tr key={reward.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-2 px-4 flex items-center">
-                      <Gift size={16} className="mr-2 text-purple-600" />
-                      {reward.title}
-                    </td>
-                    <td className="py-2 px-4 text-right">{reward.points_cost}</td>
-                    <td className="py-2 px-4 text-center">
-                      {reward.is_active ? (
-                        <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-semibold">Active</span>
-                      ) : (
-                        <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-semibold">Inactive</span>
-                      )}
-                    </td>
-                    <td className="py-2 px-4 text-right">{reward.redemptions || 0}</td>
-                    <td className="py-2 px-4 text-center">
-                      <Calendar size={14} className="inline mr-1 text-gray-400" />
-                      {reward.created_at ? new Date(reward.created_at).toLocaleDateString() : '-'}
-                    </td>
-                    <td className="py-2 px-4 text-right space-x-2">
-                      <Button variant="ghost" size="sm" leftIcon={<Pencil size={14} />} onClick={() => handleEditClick(reward)}>Edit</Button>
-                      <Button variant="danger" size="sm" leftIcon={<Trash size={14} />} onClick={() => handleDeleteReward(reward.id)}>Delete</Button>
+                {rewards && rewards.length > 0 ? (
+                  rewards.map(reward => (
+                    <tr key={reward.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-2 px-4 flex items-center">
+                        <Gift size={16} className="mr-2 text-purple-600" />
+                        {reward.title}
+                      </td>
+                      <td className="py-2 px-4 text-right">{reward.points_cost}</td>
+                      <td className="py-2 px-4 text-center">
+                        {reward.is_active ? (
+                          <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-semibold">Active</span>
+                        ) : (
+                          <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-semibold">Inactive</span>
+                        )}
+                      </td>
+                      <td className="py-2 px-4 text-right">{reward.redemptions || 0}</td>
+                      <td className="py-2 px-4 text-center">
+                        <Calendar size={14} className="inline mr-1 text-gray-400" />
+                        {reward.created_at ? new Date(reward.created_at).toLocaleDateString() : '-'}
+                      </td>
+                      <td className="py-2 px-4 text-right space-x-2">
+                        <Button variant="ghost" size="sm" leftIcon={<Pencil size={14} />} onClick={() => handleEditClick(reward)}>Edit</Button>
+                        <Button variant="danger" size="sm" leftIcon={<Trash size={14} />} onClick={() => handleDeleteReward(reward.id)}>Delete</Button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="py-4 px-4 text-center text-gray-500">
+                      No rewards found.
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
