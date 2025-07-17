@@ -76,27 +76,42 @@ export const LoyaltyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setIsLoading(true);
     try {
       const token = currentUser?.token;
-      const response = await fetch(`${API_URL}/users/owner/metrics`, {
-        headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
-        credentials: 'include'
-      });
-      const data = await response.json();
-      console.log('[LoyaltyProvider] Admin Metrics Response:', data);
-      if (data.success && data.data) {
-        const { activityLogs = [], rewards = [] } = data.data;
-                const mappedTransactions: Transaction[] = (activityLogs as BackendTransaction[]).map((t) => ({ id: t.id, userId: t.user_id, type: t.type as Transaction['type'], description: t.description, amount: t.purchase_amount || t.amount, pointsEarned: t.type === 'points_added' ? t.amount : undefined, pointsSpent: t.type === 'reward_redeemed' ? t.amount : undefined, createdAt: t.created_at }));
+      const headers = { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) };
+
+      const [metricsResponse, rewardsResponse] = await Promise.all([
+        fetch(`${API_URL}/users/owner/metrics`, { headers, credentials: 'include' }),
+        fetch(`${API_URL}/rewards`, { headers, credentials: 'include' })
+      ]);
+
+      const metricsData = await metricsResponse.json();
+      const rewardsData = await rewardsResponse.json();
+
+      console.log('[LoyaltyProvider] Admin Metrics Response:', metricsData);
+      console.log('[LoyaltyProvider] Admin Rewards Response:', rewardsData);
+
+      if (metricsData.success && metricsData.data) {
+        const { activityLogs = [] } = metricsData.data;
+        const mappedTransactions: Transaction[] = (activityLogs as BackendTransaction[]).map((t) => ({ id: t.id, userId: t.user_id, type: t.type as Transaction['type'], description: t.description, amount: t.purchase_amount || t.amount, pointsEarned: t.type === 'points_added' ? t.amount : undefined, pointsSpent: t.type === 'reward_redeemed' ? t.amount : undefined, createdAt: t.created_at }));
         setUserTransactions(mappedTransactions);
         setTransactions(mappedTransactions);
+        setLastRefreshTime(prev => ({ ...prev, transactions: Date.now() }));
+        setFetchedTransactions(true);
+      } else {
+        console.error('Failed to fetch admin metrics:', metricsData.message);
+      }
+
+      if (rewardsData.success && rewardsData.data) {
+        const rewards = rewardsData.data;
         const mappedVouchers: Voucher[] = (rewards as BackendVoucher[]).map((v) => ({ id: String(v.id), title: v.title, description: v.description, pointsCost: v.points_cost, isActive: !!v.is_active, expiryDays: v.expiry_days, minimumRequiredTier: v.minimum_required_tier }));
         setVouchers(mappedVouchers);
-        setLastRefreshTime({ transactions: Date.now(), rewards: Date.now() });
-        setFetchedTransactions(true);
+        setLastRefreshTime(prev => ({ ...prev, rewards: Date.now() }));
         setFetchedRewards(true);
       } else {
-        console.error('Failed to fetch admin metrics:', data.message);
+        console.error('Failed to fetch rewards:', rewardsData.message);
       }
+
     } catch (error) {
-      console.error('Error fetching admin metrics:', error);
+      console.error('Error fetching admin data:', error);
     } finally {
       isFetchingTransactions.current = false;
       isFetchingRewards.current = false;
