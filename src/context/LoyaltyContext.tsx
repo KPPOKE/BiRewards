@@ -81,6 +81,7 @@ export const LoyaltyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         credentials: 'include'
       });
       const data = await response.json();
+      console.log('[LoyaltyProvider] Admin Metrics Response:', data);
       if (data.success && data.data) {
         const { activityLogs = [], rewards = [] } = data.data;
                 const mappedTransactions: Transaction[] = (activityLogs as BackendTransaction[]).map((t) => ({ id: t.id, userId: t.user_id, type: t.type as Transaction['type'], description: t.description, amount: t.purchase_amount || t.amount, pointsEarned: t.type === 'points_added' ? t.amount : undefined, pointsSpent: t.type === 'reward_redeemed' ? t.amount : undefined, createdAt: t.created_at }));
