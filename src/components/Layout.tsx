@@ -16,8 +16,6 @@ import {
   MessageCircle
 } from 'lucide-react';
 import {
-  canViewStats,
-  canViewPerformanceReports,
   canManageRewards,
   canManageUsers,
   canManagePoints,
@@ -119,6 +117,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   ];
   navigation = navigation.filter(item => item.show);
 
+  // Add logout redirect to root
+  const handleLogout = async () => {
+    await logout();
+    navigate('/', { replace: true });
+  };
+
   if (!isAuthenticated) {
     return <div className="bg-gray-50 min-h-screen">{children}</div>;
   }
@@ -219,11 +223,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                       )}
                       <button
                         className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                        onClick={logout}
+                        onClick={handleLogout}
                         role="menuitem"
                       >
-                        <LogOut size={16} className="mr-2 text-red-500" />
-                        Sign out
+                        <X size={16} className="mr-2" />
+                        Logout
                       </button>
                     </div>
                   </div>
@@ -343,10 +347,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               </div>
               <button
                 className="ml-auto px-3 py-2 text-sm text-red-600 hover:bg-red-100 rounded-md"
-                onClick={() => {
-                  logout();
-                  setIsMobileMenuOpen(false);
-                }}
+                onClick={handleLogout}
               >
                 Sign Out
               </button>
