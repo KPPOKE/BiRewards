@@ -26,8 +26,8 @@ import { fixAllUserTiers } from './utils/fixUserTiers.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables
-dotenv.config();
+// Load environment variables from the backend directory
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 // Validate environment variables
 validateEnv();

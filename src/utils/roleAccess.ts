@@ -8,7 +8,7 @@ export const canManageRewards = (role: UserRole) => ['admin', 'manager'].include
 export const canManageUsers = (role: UserRole) => role === 'admin';
 export const canManageTransactions = (role: UserRole) => role === 'admin';
 export const canManagePoints = (role: UserRole) => ['admin', 'manager'].includes(role);
-export const canAddPoints = (role: UserRole) => ['cashier', 'waiter'].includes(role);
+export const canAddPoints = (role: UserRole) => ['cashier', 'waiter', 'admin'].includes(role);
 export const canViewPromotions = (role: UserRole) => role === 'waiter';
 export const canViewOwnRewards = (role: UserRole) => role === 'user';
 export const canEditProfile = (role: UserRole) => role === 'user';
