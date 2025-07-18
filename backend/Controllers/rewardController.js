@@ -10,11 +10,11 @@ export const getAllRewards = async (req, res, next) => {
 
     // Get rewards with redemptions count and created_at
     const result = await pool.query(
-      `SELECT r.*, 
-        COALESCE(COUNT(t.id), 0) as redemptions
+      `SELECT 
+        r.*, 
+        r.image_url AS "imageUrl",
+        (SELECT COUNT(*) FROM transactions t WHERE t.reward_id = r.id AND t.type = 'reward_redeemed') as redemptions
       FROM rewards r
-      LEFT JOIN transactions t ON t.reward_id = r.id AND t.type = 'reward_redeemed'
-      GROUP BY r.id
       ORDER BY r.points_cost ASC
       LIMIT $1 OFFSET $2`,
       [limit, offset]
@@ -40,7 +40,7 @@ export const getAllRewards = async (req, res, next) => {
 
 // Create new reward
 export const createReward = async (req, res, next) => {
-  const { title, description, points_cost, is_active = true, minimum_required_tier = 'Bronze' } = req.body;
+  const { title, description, points_cost, is_active = true, minimum_required_tier = 'Bronze', imageUrl } = req.body;
 
   try {
     // Validate input
@@ -50,8 +50,8 @@ export const createReward = async (req, res, next) => {
 
     // Create reward
     const result = await pool.query(
-      'INSERT INTO rewards (title, description, points_cost, is_active, minimum_required_tier) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [title, description, points_cost, is_active, minimum_required_tier]
+      'INSERT INTO rewards (title, description, points_cost, is_active, minimum_required_tier, image_url) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *, image_url AS "imageUrl"',
+      [title, description, points_cost, is_active, minimum_required_tier, imageUrl]
     );
 
     res.status(201).json({
@@ -66,7 +66,7 @@ export const createReward = async (req, res, next) => {
 // Update reward
 export const updateReward = async (req, res, next) => {
   const { id } = req.params;
-  const { title, description, points_cost, is_active, minimum_required_tier } = req.body;
+  const { title, description, points_cost, is_active, minimum_required_tier, imageUrl } = req.body;
 
   try {
     // Check if reward exists
@@ -77,8 +77,8 @@ export const updateReward = async (req, res, next) => {
 
     // Update reward
     const result = await pool.query(
-      'UPDATE rewards SET title = COALESCE($1, title), description = COALESCE($2, description), points_cost = COALESCE($3, points_cost), is_active = COALESCE($4, is_active), minimum_required_tier = COALESCE($5, minimum_required_tier) WHERE id = $6 RETURNING *',
-      [title, description, points_cost, is_active, minimum_required_tier, id]
+      'UPDATE rewards SET title = COALESCE($1, title), description = COALESCE($2, description), points_cost = COALESCE($3, points_cost), is_active = COALESCE($4, is_active), minimum_required_tier = COALESCE($5, minimum_required_tier), image_url = COALESCE($6, image_url) WHERE id = $7 RETURNING *, image_url AS "imageUrl"',
+      [title, description, points_cost, is_active, minimum_required_tier, imageUrl, id]
     );
 
     res.json({
@@ -114,7 +114,7 @@ export const getRewardById = async (req, res, next) => {
   const { id } = req.params;
 
   try {
-    const result = await pool.query('SELECT * FROM rewards WHERE id = $1', [id]);
+    const result = await pool.query('SELECT *, image_url AS "imageUrl" FROM rewards WHERE id = $1', [id]);
 
     if (result.rows.length === 0) {
       return next(new AppError('Reward not found', 404));
@@ -153,7 +153,7 @@ export const getAvailableRewards = async (req, res, next) => {
 
     // Get rewards that user can afford and meets tier requirement
     const result = await pool.query(
-      'SELECT * FROM rewards WHERE points_cost <= $1 AND is_active = true',
+      'SELECT *, image_url AS "imageUrl" FROM rewards WHERE points_cost <= $1 AND is_active = true',
       [userPoints]
     );
 

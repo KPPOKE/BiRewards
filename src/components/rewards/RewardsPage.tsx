@@ -311,11 +311,19 @@ const RewardCard: React.FC<RewardCardProps> = ({ voucher, canRedeem, userTier, o
   const requiredTier = voucher.minimumRequiredTier || 'Bronze';
   const belowTier = tierOrder[userTier] < tierOrder[requiredTier];
   return (
-    <Card className={`transition-all duration-200 ${!voucher.isActive ? 'opacity-60' : canRedeem ? 'hover:shadow-lg' : ''}`} hoverEffect={voucher.isActive && canRedeem}>
-      <CardHeader>
+    <Card className={`transition-all duration-200 flex flex-col ${!voucher.isActive ? 'opacity-60' : canRedeem ? 'hover:shadow-lg' : ''}`} hoverEffect={voucher.isActive && canRedeem}>
+      {voucher.imageUrl ? (
+        <img src={voucher.imageUrl} alt={voucher.title} className="w-full h-40 object-cover" />
+      ) : (
+        <div className="w-full h-40 bg-gray-200 flex items-center justify-center">
+          <Gift size={32} className="text-gray-400" />
+        </div>
+      )}
+      <div className="flex flex-col flex-grow p-4 space-y-4">
+      <CardHeader className="p-0">
         <div className="flex justify-between items-start">
           <CardTitle>{voucher.title}</CardTitle>
-          <div className="flex flex-col items-end">
+          <div className="flex flex-col items-end flex-shrink-0 ml-2">
             <Badge className="bg-transparent text-gray-700 font-semibold shadow-none" size="lg">
               {voucher.pointsCost} pts
             </Badge>
@@ -331,7 +339,7 @@ const RewardCard: React.FC<RewardCardProps> = ({ voucher, canRedeem, userTier, o
         </div>
       </CardHeader>
       
-      <CardContent>
+      <CardContent className="p-0 flex-grow">
         <p className="text-gray-600 mb-4">{voucher.description}</p>
         <div className="text-sm text-gray-500 flex items-center mb-4">
           <Info size={14} className="mr-1" />
@@ -345,7 +353,7 @@ const RewardCard: React.FC<RewardCardProps> = ({ voucher, canRedeem, userTier, o
         )}
       </CardContent>
       
-      <CardFooter>
+      <CardFooter className="p-0">
         <Button
           variant={canRedeem ? 'primary' : 'outline'}
           fullWidth
@@ -360,6 +368,7 @@ const RewardCard: React.FC<RewardCardProps> = ({ voucher, canRedeem, userTier, o
               : `Not Enough Points`}
         </Button>
       </CardFooter>
+      </div>
     </Card>
   );
 };

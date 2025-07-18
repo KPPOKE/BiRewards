@@ -18,6 +18,7 @@ export type Voucher = {
   expiryDays: number;
   isActive: boolean;
   minimumRequiredTier?: 'Bronze' | 'Silver' | 'Gold';
+  imageUrl?: string;
 };
 
 export type Transaction = {

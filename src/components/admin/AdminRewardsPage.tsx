@@ -16,6 +16,7 @@ interface VoucherApi {
   expiry_days: number;
   is_active: boolean;
   minimum_required_tier: 'Bronze' | 'Silver' | 'Gold';
+  imageUrl?: string;
   // Add any other backend fields as needed
 }
 
@@ -40,6 +41,7 @@ const AdminRewardsPage: React.FC = () => {
     expiryDays: 30,
     isActive: true,
     minimumRequiredTier: 'Bronze' as 'Bronze' | 'Silver' | 'Gold',
+    imageUrl: '',
   });
 
   useEffect(() => {
@@ -74,6 +76,7 @@ const AdminRewardsPage: React.FC = () => {
             expiryDays: item.expiry_days,
             isActive: item.is_active,
             minimumRequiredTier: item.minimum_required_tier,
+            imageUrl: item.imageUrl,
           }))
         );
       } else {
@@ -124,6 +127,7 @@ const AdminRewardsPage: React.FC = () => {
           points_cost: newVoucher.pointsCost,
           is_active: newVoucher.isActive,
           minimum_required_tier: newVoucher.minimumRequiredTier,
+          imageUrl: newVoucher.imageUrl,
         }),
       });
       if (!res.ok) throw new Error('Failed to create reward');
@@ -143,6 +147,7 @@ const AdminRewardsPage: React.FC = () => {
       expiryDays: 30,
       isActive: true,
       minimumRequiredTier: 'Bronze',
+      imageUrl: '',
     });
   };
 
@@ -185,6 +190,7 @@ const AdminRewardsPage: React.FC = () => {
           points_cost: currentVoucher.pointsCost,
           is_active: currentVoucher.isActive,
           minimum_required_tier: currentVoucher.minimumRequiredTier,
+          imageUrl: currentVoucher.imageUrl,
         }),
       });
       if (!res.ok) throw new Error('Failed to update reward');
@@ -377,7 +383,7 @@ const AdminRewardsPage: React.FC = () => {
       {/* Add Reward Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md flex flex-col max-h-[90vh]">
             <div className="flex justify-between items-center p-6 border-b border-gray-200">
               <h3 className="text-lg font-medium">Add New Reward</h3>
               <button
@@ -387,7 +393,7 @@ const AdminRewardsPage: React.FC = () => {
                 <X size={20} />
               </button>
             </div>
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-4 overflow-y-auto">
               <Input
                 label="Title"
                 placeholder="Enter reward title"
@@ -395,6 +401,13 @@ const AdminRewardsPage: React.FC = () => {
                 onChange={(e) => setNewVoucher({...newVoucher, title: e.target.value})}
                 fullWidth
                 required
+              />
+              <Input
+                label="Image URL"
+                placeholder="https://example.com/image.png"
+                value={newVoucher.imageUrl}
+                onChange={(e) => setNewVoucher({...newVoucher, imageUrl: e.target.value})}
+                fullWidth
               />
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -472,7 +485,7 @@ const AdminRewardsPage: React.FC = () => {
       {/* Edit Reward Modal */}
       {showEditModal && currentVoucher && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md flex flex-col max-h-[90vh]">
             <div className="flex justify-between items-center p-6 border-b border-gray-200">
               <h3 className="text-lg font-medium">Edit Reward</h3>
               <button
@@ -482,7 +495,7 @@ const AdminRewardsPage: React.FC = () => {
                 <X size={20} />
               </button>
             </div>
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-4 overflow-y-auto">
               <Input
                 label="Title"
                 placeholder="Enter reward title"
@@ -490,6 +503,13 @@ const AdminRewardsPage: React.FC = () => {
                 onChange={(e) => setCurrentVoucher({...currentVoucher, title: e.target.value})}
                 fullWidth
                 required
+              />
+              <Input
+                label="Image URL"
+                placeholder="https://example.com/image.png"
+                value={currentVoucher.imageUrl || ''}
+                onChange={(e) => setCurrentVoucher({...currentVoucher, imageUrl: e.target.value})}
+                fullWidth
               />
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -507,64 +527,69 @@ const AdminRewardsPage: React.FC = () => {
               <Input
                 label="Points Cost"
                 type="number"
-                placeholder="Required points"
-                value={(currentVoucher.pointsCost || 0).toString()}
-                onChange={(e) => setCurrentVoucher({...currentVoucher, pointsCost: parseInt(e.target.value) || 0})}
+                placeholder="e.g., 500"
+                value={currentVoucher.pointsCost}
+                onChange={(e) => setCurrentVoucher({...currentVoucher, pointsCost: parseInt(e.target.value, 10)})}
+                fullWidth
+                required
+              />
+              <Input
+                label="Expiry Days"
+                type="number"
+                placeholder="e.g., 30"
+                value={currentVoucher.expiryDays}
+                onChange={(e) => setCurrentVoucher({...currentVoucher, expiryDays: parseInt(e.target.value, 10)})}
                 fullWidth
                 required
               />
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Minimum Required Tier</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Minimum Required Tier
+                </label>
                 <select
-                  className="block w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
                   value={currentVoucher.minimumRequiredTier}
-                  onChange={e => setCurrentVoucher({...currentVoucher, minimumRequiredTier: e.target.value as 'Bronze' | 'Silver' | 'Gold'})}
+                  onChange={(e) => setCurrentVoucher({...currentVoucher, minimumRequiredTier: e.target.value as 'Bronze' | 'Silver' | 'Gold'})}
                 >
                   <option value="Bronze">Bronze</option>
                   <option value="Silver">Silver</option>
                   <option value="Gold">Gold</option>
                 </select>
               </div>
-              <Input
-                label="Expiry Days"
-                type="number"
-                placeholder="Days until expiry after redemption"
-                value={(currentVoucher.expiryDays || 0).toString()}
-                onChange={(e) => setCurrentVoucher({...currentVoucher, expiryDays: parseInt(e.target.value) || 0})}
-                fullWidth
-                required
-              />
-              <div>
-                <label className="flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="form-checkbox h-5 w-5 text-purple-600 rounded focus:ring-purple-500"
-                    checked={currentVoucher.isActive}
-                    onChange={() => setCurrentVoucher({...currentVoucher, isActive: !currentVoucher.isActive})}
-                  />
-                  <span className="ml-2 text-gray-700">Active</span>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="edit-is-active"
+                  checked={currentVoucher.isActive}
+                  onChange={(e) => setCurrentVoucher({...currentVoucher, isActive: e.target.checked})}
+                  className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                />
+                <label htmlFor="edit-is-active" className="ml-2 block text-sm text-gray-900">
+                  Active
                 </label>
               </div>
             </div>
-            <div className="flex justify-end p-6 border-t border-gray-200 gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setShowEditModal(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleEditVoucher}
-                leftIcon={<Gift size={16} />}
-              >
-                Save Changes
-              </Button>
+            <div className="flex justify-between items-center p-6 border-t border-gray-200">
               <Button
                 variant="danger"
                 onClick={handleDeleteVoucher}
               >
-                Delete
+                Delete Reward
               </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowEditModal(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleEditVoucher}
+                >
+                  Save Changes
+                </Button>
+              </div>
             </div>
           </div>
         </div>
