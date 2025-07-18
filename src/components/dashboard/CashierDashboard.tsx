@@ -5,6 +5,7 @@ import { API_URL } from '../../utils/api';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
+import CustomerProfileModal from './CustomerProfileModal';
 
 interface User {
   id: string;
@@ -18,7 +19,6 @@ interface Reward {
   title: string;
   description: string;
   points_cost: number;
-  expiry_date?: string;
   is_active: boolean;
 }
 
@@ -37,6 +37,7 @@ const CashierDashboard: React.FC = () => {
   const [addPointsMsg, setAddPointsMsg] = useState<string | null>(null);
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [loadingRewards, setLoadingRewards] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   // Mock rewards fetch (replace with real API after backend)
   React.useEffect(() => {
@@ -78,6 +79,7 @@ const CashierDashboard: React.FC = () => {
       const data = await res.json();
       if (data.success && data.data) {
         setFoundUser(data.data);
+        setIsProfileModalOpen(true); // Open the modal on success
       } else {
         setSearchError('User not found');
       }
@@ -86,6 +88,12 @@ const CashierDashboard: React.FC = () => {
     }
     
     setSearching(false);
+  };
+
+  const handlePointsAdded = (newPoints: number) => {
+    if (foundUser) {
+      setFoundUser({ ...foundUser, points: newPoints });
+    }
   };
 
   const handleAddPoints = async () => {
@@ -148,7 +156,7 @@ const CashierDashboard: React.FC = () => {
 
   return (
     <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
-      {/* Left: Customer Lookup & Add Points */}
+      {/* Left: Customer Lookup */}
       <div>
         <h1 className="text-2xl font-bold mb-2">Cashier Dashboard</h1>
         <p className="mb-4 text-gray-600">Manage customer points and view active promotions.</p>
@@ -204,26 +212,6 @@ const CashierDashboard: React.FC = () => {
               <Button onClick={handleSearch} isLoading={searching} className="self-end">Search</Button>
             </div>
             {searchError && <div className="text-red-600 mb-2">{searchError}</div>}
-            {foundUser && (
-              <div className="mb-4 p-3 rounded bg-gray-50 border">
-                <div className="font-semibold">{foundUser.name}</div>
-                <div className="text-sm text-gray-600">Phone: {foundUser.phone}</div>
-                <div className="text-sm text-gray-600">Points: {foundUser.points}</div>
-              </div>
-            )}
-            {foundUser && (
-              <div className="space-y-2">
-                <Input
-                  label="Total Purchase (Rp)"
-                  type="number"
-                  placeholder="e.g. 50000"
-                  value={purchase}
-                  onChange={e => setPurchase(e.target.value)}
-                />
-                <Button onClick={handleAddPoints}>Add Points</Button>
-                {addPointsMsg && <div className="text-green-600 mt-2">{addPointsMsg}</div>}
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>
@@ -245,7 +233,6 @@ const CashierDashboard: React.FC = () => {
                     <div className="text-gray-600 text-sm mb-1">{r.description}</div>
                     <div className="flex items-center gap-3 text-xs">
                       <span className="bg-primary-100 text-primary-700 px-2 py-0.5 rounded font-semibold">{r.points_cost} points</span>
-                      {r.expiry_date && <span className="text-gray-500">Expires {r.expiry_date}</span>}
                       <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded font-semibold">Active</span>
                     </div>
                   </li>
@@ -255,6 +242,14 @@ const CashierDashboard: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      <CustomerProfileModal 
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        user={foundUser}
+        rewards={rewards}
+        onPointsAdded={handlePointsAdded}
+      />
     </div>
   );
 };
