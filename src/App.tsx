@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './context/useAuth';
 import { LoyaltyProvider } from './context/LoyaltyContext';
@@ -28,6 +28,7 @@ import UserRedeemRequestsPage from './components/redeemRequests/UserRedeemReques
 import ManagerRedeemRequestsPage from './components/redeemRequests/ManagerRedeemRequestsPage';
 
 import { Award } from 'lucide-react';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 
 const App: React.FC = () => {
   return (
@@ -42,18 +43,44 @@ const App: React.FC = () => {
 const AppContent: React.FC = () => {
   const { isAuthenticated, currentUser } = useAuth();
   const [authView, setAuthView] = useState('login'); // 'login', 'register', 'forgotPassword'
-  const [activePage, setActivePage] = useState('dashboard');
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  React.useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '') || 'dashboard';
-      setActivePage(hash);
-    };
-
-    handleHashChange();
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
+  // Redirect to dashboard after login ONLY if on auth or root page
+  useEffect(() => {
+    if (
+      isAuthenticated &&
+      currentUser &&
+      ['/', '/login', '/register', '/forgot-password'].includes(location.pathname)
+    ) {
+      let dashboardPath = '/dashboard';
+      switch (currentUser.role) {
+        case 'admin':
+          dashboardPath = '/admin/users';
+          break;
+        case 'owner':
+          dashboardPath = '/dashboard';
+          break;
+        case 'manager':
+          dashboardPath = '/dashboard';
+          break;
+        case 'cashier':
+          dashboardPath = '/dashboard';
+          break;
+        case 'waiter':
+          dashboardPath = '/dashboard';
+          break;
+        case 'user':
+          dashboardPath = '/dashboard';
+          break;
+        default:
+          dashboardPath = '/dashboard';
+      }
+      if (location.pathname !== dashboardPath) {
+        navigate(dashboardPath, { replace: true });
+      }
+    }
+  }, [isAuthenticated, currentUser, navigate, location.pathname]);
 
   if (!isAuthenticated) {
     return (
@@ -73,24 +100,11 @@ const AppContent: React.FC = () => {
         </div>
 
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-          {authView === 'login' && (
-            <LoginForm
-              onSuccess={() => setActivePage('dashboard')}
-              onRegisterClick={() => setAuthView('register')}
-              onForgotPasswordClick={() => setAuthView('forgotPassword')}
-            />
-          )}
-          {authView === 'register' && (
-            <RegisterForm
-              onSuccess={() => setActivePage('dashboard')}
-              onLoginClick={() => setAuthView('login')}
-            />
-          )}
-          {authView === 'forgotPassword' && (
-            <ForgotPasswordForm 
-              onLoginClick={() => setAuthView('login')}
-            />
-          )}
+          <Routes>
+            <Route path="/register" element={<RegisterForm onSuccess={() => setAuthView('login')} onLoginClick={() => setAuthView('login')} />} />
+            <Route path="/forgot-password" element={<ForgotPasswordForm onLoginClick={() => setAuthView('login')} />} />
+            <Route path="/*" element={<LoginForm onSuccess={() => setAuthView('login')} onRegisterClick={() => setAuthView('register')} onForgotPasswordClick={() => setAuthView('forgotPassword')} />} />
+          </Routes>
         </div>
       </div>
     );
@@ -98,84 +112,61 @@ const AppContent: React.FC = () => {
 
   const role = currentUser?.role;
 
-  const renderPage = () => {
-    switch (role) {
-      case 'owner':
-        switch (activePage) {
-          case 'dashboard':
-            return <OwnerDashboard />;
-          case 'user-growth-trends':
-            return <UserGrowthTrendsPage />;
-          case 'points-transaction-overview':
-            return <PointsTransactionOverviewPage />;
-          case 'owner-top-users':
-            return <OwnerTopUsersPage />;
-          default:
-            return <OwnerDashboard />;
-        }
-      case 'manager':
-        switch (activePage) {
-          case 'dashboard':
-            return <ManagerDashboard />;
-          case 'top-users':
-            return <TopUsersPerformancePage />;
-          case 'activity-logs':
-            return <ActivityLogsPage />;
-          case 'admin/support':
-            return <AdminSupportPage />;
-          case 'redeem-requests':
-            return <ManagerRedeemRequestsPage />;
-          default:
-            return <ManagerDashboard />;
-        }
-      case 'cashier':
-        switch (activePage) {
-          case 'dashboard':
-          default:
-            return <CashierDashboard />;
-        }
-      case 'waiter':
-        switch (activePage) {
-          case 'dashboard':
-          default:
-            return <WaiterDashboard />;
-        }
-      case 'admin':
-        switch (activePage) {
-          case 'admin/users':
-            return <AdminUsersPage />;
-          case 'admin/rewards':
-            return <AdminRewardsPage />;
-          case 'admin/add-points':
-            return <AddPointsPage />;
-          case 'admin/support':
-            return <AdminSupportPage />;
-          default:
-            return <AdminUsersPage />;
-        }
-      case 'user':
-        switch (activePage) {
-          case 'dashboard':
-            return <UserDashboard />;
-          case 'rewards':
-            return <RewardsPage />;
-          case 'transactions':
-            return <TransactionsPage />;
-          case 'profile':
-            return <UserProfilePage />;
-          case 'support-tickets':
-            return <SupportTicketsPage />;
-          case 'redeem-requests':
-            return <UserRedeemRequestsPage />;
-          default:
-            return <UserDashboard />;
-        }
-    }
-  };
-
   return (
     <Layout>
-      {renderPage()}
+      <Routes>
+        {/* Owner routes */}
+        {role === 'owner' && (
+          <>
+            <Route path="/dashboard" element={<OwnerDashboard />} />
+            <Route path="/user-growth-trends" element={<UserGrowthTrendsPage />} />
+            <Route path="/points-transaction-overview" element={<PointsTransactionOverviewPage />} />
+            <Route path="/owner-top-users" element={<OwnerTopUsersPage />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </>
+        )}
+        {/* Manager routes */}
+        {role === 'manager' && (
+          <>
+            <Route path="/dashboard" element={<ManagerDashboard />} />
+            <Route path="/top-users" element={<TopUsersPerformancePage />} />
+            <Route path="/activity-logs" element={<ActivityLogsPage />} />
+            <Route path="/admin/support" element={<AdminSupportPage />} />
+            <Route path="/redeem-requests" element={<ManagerRedeemRequestsPage />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </>
+        )}
+        {/* Cashier routes */}
+        {role === 'cashier' && (
+          <Route path="/dashboard" element={<CashierDashboard />} />
+        )}
+        {/* Waiter routes */}
+        {role === 'waiter' && (
+          <Route path="/dashboard" element={<WaiterDashboard />} />
+        )}
+        {/* Admin routes */}
+        {role === 'admin' && (
+          <>
+            <Route path="/admin/users" element={<AdminUsersPage />} />
+            <Route path="/admin/rewards" element={<AdminRewardsPage />} />
+            <Route path="/admin/add-points" element={<AddPointsPage />} />
+            <Route path="/admin/support" element={<AdminSupportPage />} />
+            <Route path="*" element={<Navigate to="/admin/users" replace />} />
+          </>
+        )}
+        {/* User routes */}
+        {role === 'user' && (
+          <>
+            <Route path="/dashboard" element={<UserDashboard />} />
+            <Route path="/rewards" element={<RewardsPage />} />
+            <Route path="/transactions" element={<TransactionsPage />} />
+            <Route path="/profile" element={<UserProfilePage />} />
+            <Route path="/support-tickets" element={<SupportTicketsPage />} />
+            <Route path="/redeem-requests" element={<UserRedeemRequestsPage />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </>
+        )}
+      </Routes>
     </Layout>
   );
 };

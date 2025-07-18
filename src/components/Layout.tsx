@@ -25,6 +25,7 @@ import {
   canViewPromotions,
   UserRole
 } from '../utils/roleAccess';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -47,15 +48,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { currentUser, logout, isAuthenticated } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [activeRoute, setActiveRoute] = useState(window.location.hash.replace('#', '') || 'dashboard');
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+
   interface Notification {
-  id: string;
-  message: string;
-  read: boolean;
-  createdAt: string;
-}
-const [notifications, setNotifications] = useState<Notification[]>([]);
+    id: string;
+    message: string;
+    read: boolean;
+    createdAt: string;
+  }
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loadingNotifs, setLoadingNotifs] = useState(false);
 
   const userRole = (currentUser?.role as UserRole) || 'user';
@@ -90,6 +93,7 @@ const [notifications, setNotifications] = useState<Notification[]>([]);
     };
     fetchNotifications();
   }, [isNotifOpen, currentUser]);
+
   const userPoints = currentUser?.points || 0;
   const userStatus = getUserStatus(userPoints);
   const badgeClass = statusColors[userStatus as keyof typeof statusColors];
@@ -97,84 +101,27 @@ const [notifications, setNotifications] = useState<Notification[]>([]);
   // Only show member status and profile for 'user' role
   const showMemberStatus = userRole === 'user';
 
-  // Update activeRoute saat hash berubah
-  useEffect(() => {
-    const onHashChange = () => {
-      setActiveRoute(window.location.hash.replace('#', '') || 'dashboard');
-      setIsMobileMenuOpen(false); // Tutup menu mobile saat pindah halaman
-      setIsUserMenuOpen(false);   // Tutup user menu juga
-    };
-
-    window.addEventListener('hashchange', onHashChange);
-
-    return () => {
-      window.removeEventListener('hashchange', onHashChange);
-    };
-  }, []);
-
-  // Fungsi untuk pindah halaman via hash
-  const handleNavClick = (href: string) => {
-    window.location.hash = href;
-  };
+  // Define navigation items with role checks
+  let navigation = [
+    { name: 'Dashboard', href: '/dashboard', icon: Home, show: true },
+    { name: 'Rewards', href: '/rewards', icon: Gift, show: canManageRewards(userRole) || userRole === 'user' },
+    { name: 'Redeem Requests', href: '/redeem-requests', icon: Gift, show: userRole === 'user' || userRole === 'manager' },
+    { name: 'User Growth Trends', href: '/user-growth-trends', icon: Users, show: userRole === 'owner' },
+    { name: 'Points Transaction Overview', href: '/points-transaction-overview', icon: Award, show: userRole === 'owner' },
+    { name: 'Top Users', href: '/owner-top-users', icon: Users, show: userRole === 'owner' },
+    { name: 'Manage Users', href: '/admin/users', icon: Users, show: userRole === 'admin' },
+    { name: 'Manage Rewards', href: '/admin/rewards', icon: Gift, show: userRole === 'admin' },
+    { name: 'Add Points', href: '/admin/add-points', icon: Award, show: userRole === 'admin' },
+    { name: 'Support Center', href: '/admin/support', icon: MessageCircle, show: userRole === 'admin' || userRole === 'manager' },
+    { name: 'Transactions', href: '/transactions', icon: Clock, show: userRole === 'user' },
+    { name: 'Profile', href: '/profile', icon: UserIcon, show: userRole === 'user' },
+    { name: 'Support Tickets', href: '/support-tickets', icon: MessageCircle, show: userRole === 'user' },
+  ];
+  navigation = navigation.filter(item => item.show);
 
   if (!isAuthenticated) {
     return <div className="bg-gray-50 min-h-screen">{children}</div>;
   }
-
-  // Define navigation items with role checks
-  let navigation = [
-    { name: 'Dashboard', href: 'dashboard', icon: Home, show: true },
-    { name: 'Rewards', href: 'rewards', icon: Gift, show: canManageRewards(userRole) || userRole === 'user' },
-    { name: 'Redeem Requests', href: 'redeem-requests', icon: Gift, show: userRole === 'user' || userRole === 'manager' },
-    { name: 'Transactions', href: 'transactions', icon: Clock, show: canManagePoints(userRole) || userRole === 'user' },
-    { name: 'Support Tickets', href: 'support-tickets', icon: Bell, show: userRole === 'user' },
-    { name: 'Support Center', href: 'admin/support', icon: MessageCircle, show: userRole === 'admin' || userRole === 'manager' },
-    { name: 'Manage Users', href: 'admin/users', icon: Users, show: canManageUsers(userRole) },
-    { name: 'Manage Rewards', href: 'admin/rewards', icon: Award, show: canManageRewards(userRole) },
-    { name: 'Add Points', href: 'admin/add-points', icon: Award, show: canAddPoints(userRole) || canManagePoints(userRole) },
-    { name: 'Promotions', href: 'promotions', icon: Gift, show: canViewPromotions(userRole) },
-    { name: 'Stats', href: 'stats', icon: Award, show: canViewStats(userRole) },
-    { name: 'Performance Reports', href: 'performance', icon: Award, show: canViewPerformanceReports(userRole) },
-  ];
-
-  // If owner, show Dashboard, User Growth Trends, and Points Transaction Overview
-  if (userRole === 'owner') {
-    navigation = [
-      { name: 'Dashboard', href: 'dashboard', icon: Home, show: true },
-      { name: 'User Growth Trends', href: 'user-growth-trends', icon: Users, show: true },
-      { name: 'Points Transaction Overview', href: 'points-transaction-overview', icon: Award, show: true },
-      { name: 'Top Users', href: 'owner-top-users', icon: Users, show: true },
-    ];
-  }
-  // If admin, show admin-specific navigation items
-  else if (userRole === 'admin') {
-    navigation = navigation.filter(item => ['Manage Users', 'Manage Rewards', 'Add Points', 'Support Center'].includes(item.name));
-    // Set default route to Manage Users on first load
-    if (window.location.hash === '' || window.location.hash === '#dashboard') {
-      window.location.hash = 'admin/users';
-    }
-  }
-  // If manager, show manager-specific navigation items
-  else if (userRole === 'manager') {
-    navigation = [
-      { name: 'Dashboard', href: 'dashboard', icon: Home, show: true },
-      { name: 'Redeem Requests', href: 'redeem-requests', icon: Gift, show: true },
-      { name: 'Top Users Performance', href: 'top-users', icon: Users, show: true },
-      { name: 'Activity Logs', href: 'activity-logs', icon: Clock, show: true },
-      { name: 'Support Center', href: 'admin/support', icon: MessageCircle, show: true },
-    ];
-  }
-  // If cashier, remove Add Points from navigation
-  else if (userRole === 'cashier') {
-    navigation = navigation.filter(item => item.name !== 'Add Points');
-  }
-  // If waiter, remove Add Points and Promotions from navigation
-  else if (userRole === 'waiter') {
-    navigation = navigation.filter(item => item.name !== 'Add Points' && item.name !== 'Promotions');
-  }
-
-  // Filter menu sesuai role
-  const filteredNavigation = navigation.filter(item => item.show);
 
   return (
     <div className="bg-gray-50 min-h-screen flex flex-col">
@@ -260,17 +207,15 @@ const [notifications, setNotifications] = useState<Notification[]>([]);
                         <div className="text-gray-500 truncate">{currentUser?.email}</div>
                       </div>
                       {showMemberStatus && (
-                        <button
+                        <Link
+                          to="/profile"
                           className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => {
-                            handleNavClick('profile');
-                            setIsUserMenuOpen(false);
-                          }}
+                          onClick={() => setIsUserMenuOpen(false)}
                           role="menuitem"
                         >
                           <UserIcon size={16} className="mr-2 text-gray-500" />
                           Your Profile
-                        </button>
+                        </Link>
                       )}
                       <button
                         className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
@@ -311,24 +256,21 @@ const [notifications, setNotifications] = useState<Notification[]>([]);
         <aside className="hidden sm:flex sm:flex-col sm:w-64 sm:fixed sm:inset-y-0 sm:pt-16 sm:border-r sm:border-gray-200 bg-white">
           <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
             <nav className="mt-5 px-2 space-y-1">
-              {filteredNavigation.map((item) => (
-                <a
+              {navigation.map((item) => (
+                <Link
                   key={item.name}
-                  href={`#${item.href}`}
-                  onClick={() => {
-                    window.location.hash = item.href;
-                    setActiveRoute(item.href);
-                  }}
-                  className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${activeRoute === item.href ? 'bg-primary-100 text-primary-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+                  to={item.href}
+                  className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${location.pathname === item.href ? 'bg-primary-100 text-primary-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+                  onClick={() => setIsMobileMenuOpen(false)}
                 >
                   {item.icon && (
                     <item.icon
-                      className={`mr-3 flex-shrink-0 h-5 w-5 ${activeRoute === item.href ? 'text-primary-700' : 'text-gray-500 group-hover:text-gray-500'}`}
+                      className={`mr-3 flex-shrink-0 h-6 w-6 ${location.pathname === item.href ? 'text-primary-700' : 'text-gray-500 group-hover:text-gray-500'}`}
                       aria-hidden="true"
                     />
                   )}
                   {item.name}
-                </a>
+                </Link>
               ))}
             </nav>
           </div>
@@ -367,25 +309,21 @@ const [notifications, setNotifications] = useState<Notification[]>([]);
                 </span>
               </div>
               <nav className="mt-5 px-2 space-y-1">
-                {filteredNavigation.map((item) => (
-  <a
-    key={item.name}
-    href={`#${item.href}`}
-    onClick={(e) => {
-      e.preventDefault();
-      handleNavClick(item.href);
-      setIsMobileMenuOpen(false);
-    }}
-    className={`group flex items-center px-2 py-2 text-base font-medium rounded-md ${activeRoute === item.href ? 'bg-primary-100 text-primary-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
-  >
-    {item.icon && (
-      <item.icon
-        className={`mr-4 flex-shrink-0 h-6 w-6 ${activeRoute === item.href ? 'text-primary-700' : 'text-gray-500 group-hover:text-gray-500'}`}
-        aria-hidden="true"
-      />
+                {navigation.map((item) => (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`group flex items-center px-2 py-2 text-base font-medium rounded-md ${location.pathname === item.href ? 'bg-primary-100 text-primary-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+                  >
+                    {item.icon && (
+                      <item.icon
+                        className={`mr-4 flex-shrink-0 h-6 w-6 ${location.pathname === item.href ? 'text-primary-700' : 'text-gray-500 group-hover:text-gray-500'}`}
+                        aria-hidden="true"
+                      />
                     )}
                     {item.name}
-                  </a>
+                  </Link>
                 ))}
               </nav>
             </div>
@@ -424,7 +362,5 @@ const [notifications, setNotifications] = useState<Notification[]>([]);
     </div>
   );
 };
-
-// Badge component removed as it's not being used
 
 export default Layout;
