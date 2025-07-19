@@ -32,15 +32,39 @@ export const authorize = (...roles) => {
 export const canAccessOwnOrAdmin = (req, res, next) => {
   const userId = req.params.userId;
   const currentUser = req.user;
+  
+  // Debug logging
+  console.log('🔍 canAccessOwnOrAdmin Debug:');
+  console.log('Requested userId:', userId);
+  console.log('Current user:', currentUser ? {
+    id: currentUser.id,
+    role: currentUser.role,
+    email: currentUser.email
+  } : 'null');
+  
   if (!currentUser) {
+    console.log('❌ No current user - not authenticated');
     return res.status(401).json({ success: false, error: { message: 'Not authenticated' } });
   }
-  if (
+  
+  const hasAccess = (
     currentUser.role === 'admin' ||
     currentUser.role === 'manager' ||
     String(currentUser.id) === String(userId)
-  ) {
+  );
+  
+  console.log('Access check:', {
+    isAdmin: currentUser.role === 'admin',
+    isManager: currentUser.role === 'manager',
+    isOwnData: String(currentUser.id) === String(userId),
+    hasAccess
+  });
+  
+  if (hasAccess) {
+    console.log('✅ Access granted');
     return next();
   }
+  
+  console.log('❌ Access denied');
   return res.status(403).json({ success: false, error: { message: 'Forbidden: You can only access your own data.' } });
 }; 
