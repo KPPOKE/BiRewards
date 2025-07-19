@@ -6,6 +6,14 @@ const { Pool } = pkg;
 
 // Create a function to get a new pool instance
 const createPool = () => {
+  // Debug: Log environment variables (without password)
+  console.log('🔍 Database Config Debug:');
+  console.log('DB_USER:', process.env.DB_USER);
+  console.log('DB_HOST:', process.env.DB_HOST || 'localhost');
+  console.log('DB_PORT:', process.env.DB_PORT);
+  console.log('DB_NAME:', process.env.DB_NAME);
+  console.log('DB_PASSWORD:', process.env.DB_PASSWORD ? '[SET]' : '[NOT SET]');
+  
   return new Pool({
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
