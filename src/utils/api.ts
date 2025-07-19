@@ -1,4 +1,4 @@
-export const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3000/api' : 'https://birewards.id');
+export const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3000/api' : 'https://birewards.id/api');
 
 /**
  * Makes an authenticated API request
