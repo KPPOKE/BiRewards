@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/useAuth';
 import { UserRole } from '../../utils/roleAccess';
+import { API_URL } from '../../utils/api';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
 
@@ -37,7 +38,7 @@ const AdminTransactionsPage: React.FC = () => {
       search,
       type,
     });
-    fetch(`/api/transactions/all?${params.toString()}`, {
+    fetch(`${API_URL}/transactions/all?${params.toString()}`, {
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
     })

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/useAuth';
 import { UserRole } from '../../utils/roleAccess';
+import { API_URL } from '../../utils/api';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Gift } from 'lucide-react';
 
@@ -23,7 +24,10 @@ const WaiterPromotionsPage: React.FC = () => {
   useEffect(() => {
     if (userRole !== 'waiter') return;
     setLoading(true);
-    fetch('/api/rewards')
+    fetch(`${API_URL}/rewards`, {
+      headers: { 'Content-Type': 'application/json', ...(localStorage.getItem('token') ? { 'Authorization': `Bearer ${localStorage.getItem('token')}` } : {}) },
+      credentials: 'include',
+    })
       .then(res => res.json())
       .then(data => {
         if (data.success) {

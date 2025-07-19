@@ -3,7 +3,7 @@ import { useAuth } from '../../context/useAuth';
 import { UserRole } from '../../utils/roleAccess';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
-import api from '../../utils/api';
+import api, { API_URL } from '../../utils/api';
 
 const AddPointsPage: React.FC = () => {
   const { currentUser } = useAuth();
@@ -22,7 +22,10 @@ const AddPointsPage: React.FC = () => {
     setLoading(true);
     try {
       // 1. Find user by email
-      const userRes = await fetch(`/api/users?email=${encodeURIComponent(email)}`);
+      const userRes = await fetch(`${API_URL}/users?email=${encodeURIComponent(email)}`, {
+        headers: { 'Content-Type': 'application/json', ...(localStorage.getItem('token') ? { 'Authorization': `Bearer ${localStorage.getItem('token')}` } : {}) },
+        credentials: 'include',
+      });
       const userData = await userRes.json();
       if (!userData.success || !userData.data.length) {
         setError('User not found');
