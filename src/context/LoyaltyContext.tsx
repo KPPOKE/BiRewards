@@ -78,10 +78,9 @@ export const LoyaltyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const token = currentUser?.token;
       const headers = { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) };
 
-      const rewardsEndpoint = import.meta.env.DEV ? '/rewards' : '/admin/rewards';
       const [metricsResponse, rewardsResponse] = await Promise.all([
         fetch(`${API_URL}/users/owner/metrics`, { headers, credentials: 'include' }),
-        fetch(`${API_URL}${rewardsEndpoint}`, { headers, credentials: 'include' })
+        fetch(`${API_URL}/rewards`, { headers, credentials: 'include' })
       ]);
 
       const metricsData = await metricsResponse.json();
@@ -155,8 +154,7 @@ export const LoyaltyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setIsLoading(true);
     try {
       const token = currentUser?.token;
-      const rewardsEndpoint = import.meta.env.DEV ? '/rewards' : '/admin/rewards';
-      const response = await fetch(`${API_URL}${rewardsEndpoint}`, { headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }, credentials: 'include' });
+      const response = await fetch(`${API_URL}/rewards`, { headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }, credentials: 'include' });
       const data = await response.json();
       if (data.success && data.data) {
         const mappedVouchers: Voucher[] = (data.data as BackendVoucher[]).map((v) => ({ id: String(v.id), title: v.title, description: v.description, pointsCost: v.points_cost, isActive: !!v.is_active, expiryDays: v.expiry_days, minimumRequiredTier: v.minimum_required_tier }));
