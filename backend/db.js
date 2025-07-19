@@ -7,11 +7,11 @@ const { Pool } = pkg;
 // Create a function to get a new pool instance
 const createPool = () => {
   return new Pool({
-    user: process.env.db_user,
-    password: process.env.db_password,
-    port: Number(process.env.db_port),
-    database: process.env.db_name,
-    host: process.env.db_host || 'localhost',
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    port: Number(process.env.DB_PORT),
+    database: process.env.DB_NAME,
+    host: process.env.DB_HOST || 'localhost',
     // Add connection timeout
     connectionTimeoutMillis: 5000,
     // Add idle timeout
