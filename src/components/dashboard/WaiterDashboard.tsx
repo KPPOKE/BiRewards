@@ -33,8 +33,7 @@ const WaiterDashboard: React.FC = () => {
   const [foundUser, setFoundUser] = useState<User | null>(null);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [purchase, setPurchase] = useState('');
-  const [addPointsMsg, setAddPointsMsg] = useState<string | null>(null);
+
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [loadingRewards, setLoadingRewards] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -63,7 +62,6 @@ const WaiterDashboard: React.FC = () => {
     setSearching(true);
     setSearchError(null);
     setFoundUser(null);
-    setAddPointsMsg(null);
     
     try {
       // Build the query string based on search type
@@ -98,11 +96,6 @@ const WaiterDashboard: React.FC = () => {
     }
   };
 
-  const handleAddPoints = async () => {
-    if (!foundUser) return;
-    setAddPointsMsg(null);
-    // ... rest of the function remains the same ...
-  };
 
   if (userRole !== 'waiter') {
     return <div className="p-6 text-red-600 font-semibold">Not authorized to view this page.</div>;

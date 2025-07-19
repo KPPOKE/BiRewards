@@ -33,8 +33,7 @@ const CashierDashboard: React.FC = () => {
   const [foundUser, setFoundUser] = useState<User | null>(null);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [purchase, setPurchase] = useState('');
-  const [addPointsMsg, setAddPointsMsg] = useState<string | null>(null);
+
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [loadingRewards, setLoadingRewards] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -63,7 +62,6 @@ const CashierDashboard: React.FC = () => {
     setSearching(true);
     setSearchError(null);
     setFoundUser(null);
-    setAddPointsMsg(null);
     
     try {
       // Build the query string based on search type
@@ -96,59 +94,7 @@ const CashierDashboard: React.FC = () => {
     }
   };
 
-  const handleAddPoints = async () => {
-    if (!foundUser) return;
-    setAddPointsMsg(null);
-    
-    // Validate purchase amount
-    const purchaseAmount = Number(purchase);
-    if (isNaN(purchaseAmount) || purchaseAmount <= 0) {
-      setAddPointsMsg('Please enter a valid purchase amount.');
-      return;
-    }
-    
-    // Calculate points - 1 point per Rp10,000
-    const amount = Math.floor(purchaseAmount / 10000);
-    if (amount <= 0) {
-      setAddPointsMsg('Purchase too low for points. Minimum Rp10,000 required.');
-      return;
-    }
-    
-    try {
-      // Use the direct points API endpoint that matches the database structure
-      const res = await fetch(`${API_URL}/add-points/${foundUser.id}`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json', 
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {}) 
-        },
-        credentials: 'include',
-        body: JSON.stringify({ 
-          amount, 
-          description: `Purchase Rp${purchaseAmount.toLocaleString()}` 
-        }),
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        console.error('API error:', errorData);
-        setAddPointsMsg(`Failed to add points: ${errorData.error?.message || 'Server error'}`);
-        return;
-      }
-      
-      const data = await res.json();
-      if (data.success) {
-        setAddPointsMsg(`Points added! New balance: ${data.data.newPoints}`);
-        setFoundUser({ ...foundUser, points: data.data.newPoints });
-        setPurchase('');
-      } else {
-        setAddPointsMsg(`Failed to add points: ${data.error?.message || 'Unknown error'}`);
-      }
-    } catch (err) {
-      console.error('Error adding points:', err);
-      setAddPointsMsg('Failed to add points. Network or server error.');
-    }
-  };
+
 
   if (userRole !== 'cashier') {
     return <div className="p-6 text-red-600 font-semibold">Not authorized to view this page.</div>;

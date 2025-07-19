@@ -177,7 +177,7 @@ const AdminRewardsPage: React.FC = () => {
     // Send to backend
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API_URL}/rewards/${currentVoucher.id}`, {
+                  const res = await fetch(`${API_URL}/rewards/${currentVoucher.id}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -226,7 +226,7 @@ const AdminRewardsPage: React.FC = () => {
     if (!window.confirm(`Are you sure you want to delete reward '${currentVoucher.title}'? This action cannot be undone.`)) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API_URL}/rewards/${currentVoucher.id}`, {
+                  const res = await fetch(`${API_URL}/rewards/${currentVoucher.id}`, {
         method: 'DELETE',
         headers: { 
           'Content-Type': 'application/json',

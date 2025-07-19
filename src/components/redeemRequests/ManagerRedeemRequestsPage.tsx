@@ -59,7 +59,7 @@ const ManagerRedeemRequestsPage: React.FC = () => {
         queryParams.append('endDate', endDate);
       }
       
-      const response = await fetch(`${API_URL}/redeem-requests/all?${queryParams.toString()}`, {
+                  const response = await fetch(`${API_URL}/redeem-requests/all?${queryParams.toString()}`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`

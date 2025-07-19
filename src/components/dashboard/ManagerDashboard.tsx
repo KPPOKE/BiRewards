@@ -47,7 +47,7 @@ const ManagerDashboard: React.FC = () => {
   const handleEditSave = async () => {
     if (!editingReward) return;
     try {
-      const res = await fetch(`${API_URL}/rewards/${editingReward.id}`, {
+                  const res = await fetch(`${API_URL}/rewards/${editingReward.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -72,7 +72,7 @@ const ManagerDashboard: React.FC = () => {
     const rewardId = reward.id;
     if (!window.confirm('Are you sure you want to delete this reward?')) return;
     try {
-      const res = await fetch(`${API_URL}/rewards/${rewardId}`, {
+                  const res = await fetch(`${API_URL}/rewards/${rewardId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
