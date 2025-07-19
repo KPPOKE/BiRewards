@@ -59,18 +59,7 @@ app.use(express.json({ limit: '10kb' })); // Body parser, reading data from body
 const requestTracker = new Map();
 
 // COMPLETE FIX: Block ALL support ticket API calls that are causing infinite loops
-// API Routes
-app.use('/api/users', userRoutes);
-app.use('/api/rewards', rewardRoutes);
-app.use('/api/transactions', transactionRoutes);
-app.use('/api/customers', customerRoutes);
-app.use('/api/points', pointsRoutes);
-app.use('/api/direct-points', directPointsRoutes);
-app.use('/api/support-tickets', supportTicketRoutes);
-app.use('/api/activity-logs', activityLogRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/redeem-requests', redeemRequestRoutes);
-app.use('/api/api-docs', apiDocsRoutes);
+
 
 // Serve frontend in production
 if (process.env.NODE_ENV === 'production') {
