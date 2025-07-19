@@ -35,7 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      const response = await api.post('/users/login', { email, password });
+      const response = await api.post('/users/login/', { email, password });
       
       if (response.success && response.token && response.data) {
         // Merge token into user object
@@ -100,4 +100,3 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     </AuthContext.Provider>
   );
 };
-
