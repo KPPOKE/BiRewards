@@ -9,13 +9,28 @@ export const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'h
 export const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
   const token = localStorage.getItem('token');
   
+  // Debug logging to track API calls
+  const fullUrl = `${API_URL}${endpoint}`;
+  console.log('🔍 API Request Debug:', {
+    endpoint,
+    fullUrl,
+    method: options.method || 'GET',
+    hasToken: !!token
+  });
+  
+  // Check for suspicious URLs with user IDs
+  if (endpoint.match(/\/(rewards|redeem-requests|support-tickets)\/\d+$/)) {
+    console.warn('⚠️ Suspicious API call detected:', fullUrl);
+    console.trace('Call stack:');
+  }
+  
   const headers = {
     'Content-Type': 'application/json',
     ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     ...(options.headers || {})
   };
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
+  const response = await fetch(fullUrl, {
     ...options,
     headers
   });
