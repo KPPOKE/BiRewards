@@ -116,14 +116,14 @@ app.use('/api/support-tickets', (req, res, next) => {
 app.use('/api/users', userRoutes);
 app.use('/api', rewardRoutes);
 app.use('/api', transactionRoutes);
-app.use('/api', pointsRoutes); // Register the points routes
-app.use('/api', directPointsRoutes); // Register the direct points routes
+// app.use('/api', pointsRoutes); // Register the points routes
+// app.use('/api', directPointsRoutes); // Register the direct points routes
 app.use('/api-docs', apiDocsRoutes);
-app.use('/api/support-tickets', supportTicketRoutes);
+// app.use('/api/support-tickets', supportTicketRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api', activityLogRoutes);
-app.use('/api/admin', adminRoutes); // Register the admin routes
-app.use('/api/redeem-requests', redeemRequestRoutes); // Register the redeem requests routes
+// app.use('/api/admin', adminRoutes); // Register the admin routes
+// app.use('/api/redeem-requests', redeemRequestRoutes); // Register the redeem requests routes
 
 // Serve uploads directory for profile images
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
