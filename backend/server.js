@@ -80,59 +80,59 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Custom rate limiter for support tickets to prevent abuse
-app.use('/api/support-tickets', (req, res, next) => {
-  // Get a unique request identifier
-  const path = req.path;
-  const method = req.method;
-  
-  // Extract ticket ID from URL if available
-  const pathSegments = path.split('/');
-  const ticketId = pathSegments.length > 1 ? pathSegments[1] : 'all';
-  
-  // Create a key based on the specific endpoint being accessed
-  const endpointKey = `${method}-${ticketId}-${pathSegments.length > 2 ? pathSegments[2] : 'main'}`;
-  
-  const now = Date.now();
-  const lastRequest = requestTracker.get(endpointKey);
-  
-  // For any support ticket endpoint, enforce a 1 second cooldown period
-  if (lastRequest && now - lastRequest < 1000) {
-    console.log(`🛑 Blocking repeated request: ${method} ${path} (too frequent)`);
-    return res.status(429).json({
-      success: false,
-      error: 'Request rate limited. Please wait before making another request.'
-    });
-  }
-  
-  // Update the tracker with this request
-  requestTracker.set(endpointKey, now);
-  console.log(`✅ Allowing request: ${method} ${path}`);
-  
-  // Clean up old entries periodically
-  if (Math.random() < 0.1) { 
-    const expiryTime = now - 5000; // 5 seconds
-    for (const [key, timestamp] of requestTracker.entries()) {
-      if (timestamp < expiryTime) {
-        requestTracker.delete(key);
-      }
-    }
-  }
-  
-  next();
-});
+// app.use('/api/support-tickets', (req, res, next) => {
+//   // Get a unique request identifier
+//   const path = req.path;
+//   const method = req.method;
+//   
+//   // Extract ticket ID from URL if available
+//   const pathSegments = path.split('/');
+//   const ticketId = pathSegments.length > 1 ? pathSegments[1] : 'all';
+//   
+//   // Create a key based on the specific endpoint being accessed
+//   const endpointKey = `${method}-${ticketId}-${pathSegments.length > 2 ? pathSegments[2] : 'main'}`;
+//   
+//   const now = Date.now();
+//   const lastRequest = requestTracker.get(endpointKey);
+//   
+//   // For any support ticket endpoint, enforce a 1 second cooldown period
+//   if (lastRequest && now - lastRequest < 1000) {
+//     console.log(`🛑 Blocking repeated request: ${method} ${path} (too frequent)`);
+//     return res.status(429).json({
+//       success: false,
+//       error: 'Request rate limited. Please wait before making another request.'
+//     });
+//   }
+//   
+//   // Update the tracker with this request
+//   requestTracker.set(endpointKey, now);
+//   console.log(`✅ Allowing request: ${method} ${path}`);
+//   
+//   // Clean up old entries periodically
+//   if (Math.random() < 0.1) { 
+//     const expiryTime = now - 5000; // 5 seconds
+//     for (const [key, timestamp] of requestTracker.entries()) {
+//       if (timestamp < expiryTime) {
+//         requestTracker.delete(key);
+//       }
+//     }
+//   }
+//   
+//   next();
+// });
 
 
-// app.use('/api/users', userRoutes);
-// app.use('/api', rewardRoutes);
-// app.use('/api', transactionRoutes);
-// app.use('/api', pointsRoutes); 
-// app.use('/api', directPointsRoutes);
-// app.use('/api-docs', apiDocsRoutes);
-// app.use('/api/support-tickets', supportTicketRoutes);
-// app.use('/api/customers', customerRoutes);
-// app.use('/api', activityLogRoutes);
-// app.use('/api/admin', adminRoutes); 
-// app.use('/api/redeem-requests', redeemRequestRoutes); 
+app.use('/api/users', userRoutes);
+app.use('/api', rewardRoutes);
+app.use('/api', transactionRoutes);
+app.use('/api', pointsRoutes); 
+app.use('/api', directPointsRoutes);
+app.use('/api-docs', apiDocsRoutes);
+app.use('/api/support-tickets', supportTicketRoutes);
+app.use('/api/customers', customerRoutes);
+app.use('/api', activityLogRoutes);
+app.use('/api/admin', adminRoutes); 
+app.use('/api/redeem-requests', redeemRequestRoutes); 
 
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
