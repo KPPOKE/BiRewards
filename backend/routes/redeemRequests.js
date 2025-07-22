@@ -21,20 +21,20 @@ router.use(protect);
   validate(schemas.redeem.create),
   auditLog('redemption_requested'),
   createRedeemRequest
-// );
+
 
 // Get user's own redemption requests (user view)
 // router.get(
   '/my-requests',
   getUserRedeemRequests
-// );
+
 
 // Get all redemption requests (manager view)
 // router.get(
   '/all',
   authorize('admin', 'manager'),
   getAllRedeemRequests
-// );
+
 
 // Process (approve/reject) a redemption request
 // router.put(
@@ -43,12 +43,12 @@ router.use(protect);
 //   validate(schemas.redeem.process),
 //   auditLog('redemption_processed'),
 //   processRedeemRequest
-// );
+
 
 // Use a voucher (mark as used)
 // router.put(
 //   '/:id/use-voucher',
 //   useVoucher
-// );
+
 
 export default router;
