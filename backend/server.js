@@ -8,7 +8,7 @@ import transactionRoutes from './routes/transactions.js';
 import customerRoutes from './routes/customers.js';
 import pointsRoutes from './routes/pointsRoutes.js';
 import directPointsRoutes from './routes/directPoints.js';
-import errorHandler from './middleware/errorHandler.js';
+import { errorHandler } from './middleware/errorHandler.js';
 // Rate limiter removed
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
