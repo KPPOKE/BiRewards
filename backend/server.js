@@ -122,17 +122,17 @@ app.use('/api/support-tickets', (req, res, next) => {
 });
 
 
-app.use('/api/users', userRoutes);
-app.use('/api', rewardRoutes);
-app.use('/api', transactionRoutes);
-app.use('/api', pointsRoutes); 
-app.use('/api', directPointsRoutes);
-app.use('/api-docs', apiDocsRoutes);
-app.use('/api/support-tickets', supportTicketRoutes);
-app.use('/api/customers', customerRoutes);
-app.use('/api', activityLogRoutes);
-app.use('/api/admin', adminRoutes); 
-app.use('/api/redeem-requests', redeemRequestRoutes); 
+// app.use('/api/users', userRoutes);
+// app.use('/api', rewardRoutes);
+// app.use('/api', transactionRoutes);
+// app.use('/api', pointsRoutes); 
+// app.use('/api', directPointsRoutes);
+// app.use('/api-docs', apiDocsRoutes);
+// app.use('/api/support-tickets', supportTicketRoutes);
+// app.use('/api/customers', customerRoutes);
+// app.use('/api', activityLogRoutes);
+// app.use('/api/admin', adminRoutes); 
+// app.use('/api/redeem-requests', redeemRequestRoutes); 
 
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
