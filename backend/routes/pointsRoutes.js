@@ -10,11 +10,11 @@ const router = express.Router();
 router.use(protect);
 
 // Add points (admin/manager/cashier only)
-router.post('/points/:userId', 
+// router.post('/points/:userId', 
   authorize('admin', 'manager', 'cashier'), 
   validate(schemas.transaction.addPoints), 
   auditLog('points_changed'), 
   addPoints
-);
+// );
 
 export default router;
