@@ -38,17 +38,17 @@ router.use(protect);
 
 // Process (approve/reject) a redemption request
 // router.put(
-  '/:id/process',
-  authorize('admin', 'manager'),
-  validate(schemas.redeem.process),
-  auditLog('redemption_processed'),
-  processRedeemRequest
+//   '/:id/process',
+//   authorize('admin', 'manager'),
+//   validate(schemas.redeem.process),
+//   auditLog('redemption_processed'),
+//   processRedeemRequest
 // );
 
 // Use a voucher (mark as used)
 // router.put(
-  '/:id/use-voucher',
-  useVoucher
+//   '/:id/use-voucher',
+//   useVoucher
 // );
 
 export default router;
