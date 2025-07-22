@@ -1,48 +1,20 @@
 // Error handling middleware
-const errorHandler = (err, req, res, next) => {
-  if (err.name === 'TypeError' && err.message.includes('parameter')) {
+export const errorHandler = (err, req, res, next) => {
+  console.error(err.stack);
+
+  // Handle path-to-regexp errors
+  if (err.message && err.message.includes('Missing parameter name')) {
     return res.status(400).json({
       success: false,
-      error: 'Invalid route parameters',
+      message: 'Invalid route parameter',
       details: err.message
     });
   }
 
-  console.error(err.stack);
-
-  // Prefer statusCode, then status, then 500
-  let status = err.statusCode || err.status || 500;
-  let message = err.message || 'Internal Server Error';
-
-  // Handle specific error types
-  if (err.name === 'ValidationError') {
-    status = 400;
-    message = err.message;
-  } else if (err.name === 'UnauthorizedError') {
-    status = 401;
-    message = 'Unauthorized access';
-  } else if (err.name === 'ForbiddenError') {
-    status = 403;
-    message = 'Forbidden access';
-  } else if (err.name === 'NotFoundError') {
-    status = 404;
-    message = 'Resource not found';
-  }
-
-  // Ensure status is a number
-  if (typeof status !== 'number' || isNaN(status)) {
-    status = 500;
-  }
-
-  // Send error response
-  res.status(status).json({
+  // Default error
+  res.status(500).json({
     success: false,
-    error: {
-      message,
-      status,
-      ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-    }
+    message: 'Internal server error',
+    details: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
 };
-
-export default errorHandler;
