@@ -21,6 +21,7 @@ import activityLogRoutes from './routes/activityLogRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import redeemRequestRoutes from './routes/redeemRequests.js';
 import { fixAllUserTiers } from './utils/fixUserTiers.js';
+import { Pool } from 'pg';
 
 // Get current directory
 const __filename = fileURLToPath(import.meta.url);
@@ -33,6 +34,15 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 validateEnv();
 
 const app = express();
+
+// PostgreSQL database connection
+const pool = new Pool({
+  user: process.env.DB_USER || 'birewards_user',
+  host: process.env.DB_HOST || 'localhost',
+  database: process.env.DB_NAME || 'birewards_db',
+  password: process.env.DB_PASSWORD,
+  port: process.env.DB_PORT || 5432,
+});
 
 // Swagger setup
 try {
@@ -112,23 +122,21 @@ app.use('/api/support-tickets', (req, res, next) => {
   next();
 });
 
-// Routes
+
 app.use('/api/users', userRoutes);
 app.use('/api', rewardRoutes);
 app.use('/api', transactionRoutes);
-app.use('/api', pointsRoutes); // Register the points routes
-app.use('/api', directPointsRoutes); // Register the direct points routes
+app.use('/api', pointsRoutes); 
+app.use('/api', directPointsRoutes);
 app.use('/api-docs', apiDocsRoutes);
 app.use('/api/support-tickets', supportTicketRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api', activityLogRoutes);
-app.use('/api/admin', adminRoutes); // Register the admin routes
-app.use('/api/redeem-requests', redeemRequestRoutes); // Register the redeem requests routes
+app.use('/api/admin', adminRoutes); 
+app.use('/api/redeem-requests', redeemRequestRoutes); 
 
-// Serve uploads directory for profile images
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
-// Error handling
 app.use(errorHandler);
 
 // 404 handler
@@ -142,18 +150,29 @@ app.use((req, res) => {
   });
 });
 
-// Start server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, async () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📝 API Documentation: http://localhost:${PORT}/api-docs`);
-  
-  // Fix all user tiers on startup
-  try {
-    console.log('Running automatic tier fix on startup...');
-    const result = await fixAllUserTiers();
-    console.log('Tier fix result:', result);
-  } catch (error) {
-    console.error('Error running tier fix on startup:', error);
-  }
-});
+// Test database connection
+pool.connect()
+  .then(() => {
+    console.log('✅ Database connected successfully!');
+    // Start server
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, async () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`📝 API Documentation: http://localhost:${PORT}/api-docs`);
+      
+      // Fix all user tiers on startup
+      try {
+        console.log('Running automatic tier fix on startup...');
+        const result = await fixAllUserTiers();
+        console.log('Tier fix result:', result);
+      } catch (error) {
+        console.error('Error running tier fix on startup:', error);
+      }
+    });
+  })
+  .catch(err => {
+    console.error('❌ Database connection error:', err);
+    process.exit(1);
+  });
+
+export { pool };

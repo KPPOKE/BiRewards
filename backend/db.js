@@ -4,9 +4,9 @@ dotenv.config();
 
 const { Pool } = pkg;
 
-// Create a function to get a new pool instance
+
+
 const createPool = () => {
-  // Debug: Log environment variables (without password)
   console.log('🔍 Database Config Debug:');
   console.log('DB_USER:', process.env.DB_USER);
   console.log('DB_HOST:', process.env.DB_HOST || 'localhost');
@@ -27,10 +27,10 @@ const createPool = () => {
   });
 };
 
-// Create the main pool instance
+
 const pool = createPool();
 
-// Coba koneksi saat inisialisasi
+
 pool.connect()
   .then(() => {
     console.log('✅ Database connected successfully!');

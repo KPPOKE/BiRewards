@@ -6,9 +6,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js",
-    "setup-db": "node db/setup.js",
-    "test": "jest --coverage"
+    "dev": "nodemon server.js"
   },
   "keywords": [],
   "author": "",

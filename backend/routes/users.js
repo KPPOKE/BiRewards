@@ -56,7 +56,12 @@ router.put('/:id', protect, authorize('admin'), validate(schemas.user.update), a
 router.delete('/:id', protect, authorize('admin'), auditLog('user_deleted'), deleteUser);
 
 // Profile routes
-router.get('/:id/profile', protect, getUserProfile);
+router.get('/:id/profile', protect, (req, res, next) => {
+  if (!req.params.id) {
+    return next(new Error('User ID is required'));
+  }
+  getUserProfile(req, res, next);
+});
 router.post('/:id/profile-image', protect, upload.single('profile_image'), uploadProfileImage);
 router.put('/:id/profile', protect, updateUser);
 

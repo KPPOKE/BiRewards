@@ -1,5 +1,13 @@
 // Error handling middleware
 const errorHandler = (err, req, res, next) => {
+  if (err.name === 'TypeError' && err.message.includes('parameter')) {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid route parameters',
+      details: err.message
+    });
+  }
+
   console.error(err.stack);
 
   // Prefer statusCode, then status, then 500
@@ -37,4 +45,4 @@ const errorHandler = (err, req, res, next) => {
   });
 };
 
-export default errorHandler; 
+export default errorHandler;
