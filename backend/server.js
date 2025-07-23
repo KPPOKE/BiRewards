@@ -32,7 +32,7 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 // Validate environment variables
 validateEnv();
 
-const app = express();
+const app = express();  
 
 // PostgreSQL database connection
 const pool = new Pool({
