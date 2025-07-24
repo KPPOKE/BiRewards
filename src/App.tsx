@@ -82,7 +82,7 @@ const AppContent: React.FC = () => {
   }, [isAuthenticated, currentUser, navigate, location.pathname]);
 
   const renderAuthHeader = () => {
-    let text = "Sign in to manage your loyalty rewards";
+    let text = "Setiap Transaksi, Selalu Ada Apresiasi";
     if (location.pathname === '/register') {
       text = "Create an account to start earning rewards";
     } else if (location.pathname === '/forgot-password') {

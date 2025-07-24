@@ -1,127 +1,72 @@
+// server.js (Versi Final & Bersih)
+
+// 1. Muat Environment Variables TERLEBIH DAHULU
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, '.env') });
+
+// 2. Impor semua modul dan rute
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import helmet from 'helmet';
+import { Pool } from 'pg';
+import swaggerUi from 'swagger-ui-express';
+import YAML from 'yamljs';
+
+import { errorHandler } from './middleware/errorHandler.js';
+import { validateEnv } from './utils/validateEnv.js';
+import { fixAllUserTiers } from './utils/fixUserTiers.js';
+
+// Impor semua file rute Anda
 import userRoutes from './routes/users.js';
 import rewardRoutes from './routes/rewards.js';
 import transactionRoutes from './routes/transactions.js';
 import customerRoutes from './routes/customers.js';
 import pointsRoutes from './routes/pointsRoutes.js';
 import directPointsRoutes from './routes/directPoints.js';
-import { errorHandler } from './middleware/errorHandler.js';
-import swaggerUi from 'swagger-ui-express';
-import YAML from 'yamljs';
 import apiDocsRoutes from './routes/api-docs.js';
-import { validateEnv } from './utils/validateEnv.js';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import supportTicketRoutes from './routes/supportTickets.js';
 import activityLogRoutes from './routes/activityLogRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import redeemRequestRoutes from './routes/redeemRequests.js';
-import { fixAllUserTiers } from './utils/fixUserTiers.js';
-import { Pool } from 'pg';
 
-// Get current directory
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Load environment variables from the backend directory
-dotenv.config({ path: path.join(__dirname, '.env') });
-
-// Validate environment variables
+// 3. Validasi Environment & Inisialisasi Aplikasi
 validateEnv();
+const app = express();
 
-const app = express();  
-
-// PostgreSQL database connection
+// 4. Koneksi Database
 const pool = new Pool({
-  user: process.env.DB_USER || 'birewards_user',
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'birewards_db',
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
   password: process.env.DB_PASSWORD,
-  port: process.env.DB_PORT || 5432,
+  port: process.env.DB_PORT,
 });
+
+// 5. Setup Middleware
+app.use(helmet());
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? 'https://birewards.id' 
+    : 'http://localhost:5173',
+  credentials: true
+}));
+app.use(express.json({ limit: '10kb' }));
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Swagger setup
 try {
   const swaggerDocument = YAML.load(path.join(__dirname, 'swagger.yaml'));
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 } catch (error) {
   console.error('Error loading Swagger documentation:', error);
 }
 
-// Security middleware
-app.use(helmet()); // Set security HTTP headers
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? 'http://birewards.id' 
-    : 'http://localhost:5173',
-  credentials: true
-})); // Enable CORS for frontend
-app.use(express.json({ limit: '10kb' })); // Body parser, reading data from body into req.body
-
-// Apply rate limiting to all routes
-// Rate limiter removed - unlimited API requests allowed
-
-// EMERGENCY FIX: Implement a request tracker to prevent infinite API calls
-const requestTracker = new Map();
-
-// COMPLETE FIX: Block ALL support ticket API calls that are causing infinite loops
-
-
-// Serve frontend in production
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../dist')));
-
-  app.get('/*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../dist/index.html'));
-  });
-}
-
-// Custom rate limiter for support tickets to prevent abuse
-// app.use('/api/support-tickets', (req, res, next) => {
-//   // Get a unique request identifier
-//   const path = req.path;
-//   const method = req.method;
-//   
-//   // Extract ticket ID from URL if available
-//   const pathSegments = path.split('/');
-//   const ticketId = pathSegments.length > 1 ? pathSegments[1] : 'all';
-//   
-//   // Create a key based on the specific endpoint being accessed
-//   const endpointKey = `${method}-${ticketId}-${pathSegments.length > 2 ? pathSegments[2] : 'main'}`;
-//   
-//   const now = Date.now();
-//   const lastRequest = requestTracker.get(endpointKey);
-//   
-//   // For any support ticket endpoint, enforce a 1 second cooldown period
-//   if (lastRequest && now - lastRequest < 1000) {
-//     console.log(`🛑 Blocking repeated request: ${method} ${path} (too frequent)`);
-//     return res.status(429).json({
-//       success: false,
-//       error: 'Request rate limited. Please wait before making another request.'
-//     });
-//   }
-//   
-//   // Update the tracker with this request
-//   requestTracker.set(endpointKey, now);
-//   console.log(`✅ Allowing request: ${method} ${path}`);
-//   
-//   // Clean up old entries periodically
-//   if (Math.random() < 0.1) { 
-//     const expiryTime = now - 5000; // 5 seconds
-//     for (const [key, timestamp] of requestTracker.entries()) {
-//       if (timestamp < expiryTime) {
-//         requestTracker.delete(key);
-//       }
-//     }
-//   }
-//   
-//   next();
-// });
-
-
+// 6. Pasang Semua Rute
 app.use('/api/users', userRoutes);
 app.use('/api', rewardRoutes);
 app.use('/api', transactionRoutes);
@@ -134,43 +79,33 @@ app.use('/api', activityLogRoutes);
 app.use('/api/admin', adminRoutes); 
 app.use('/api/redeem-requests', redeemRequestRoutes); 
 
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
-
+// 7. Error & 404 Handler (di bagian paling akhir)
 app.use(errorHandler);
-
-// 404 handler
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    error: {
-      message: 'Route not found',
-      status: 404
-    }
+    error: { message: 'Route not found', status: 404 }
   });
 });
 
-// Test database connection
+// 8. Jalankan Server setelah koneksi DB berhasil
+const PORT = process.env.PORT || 3001;
 pool.connect()
   .then(() => {
     console.log('✅ Database connected successfully!');
-    // Start server
-    const PORT = process.env.PORT || 5000;
     app.listen(PORT, async () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-      console.log(`📝 API Documentation: http://localhost:${PORT}/api-docs`);
-      
-      // Fix all user tiers on startup
+      console.log(`🚀 Server berjalan di port ${PORT}`);
       try {
         console.log('Running automatic tier fix on startup...');
-        const result = await fixAllUserTiers();
-        console.log('Tier fix result:', result);
+        await fixAllUserTiers();
+        console.log('Tier fix completed.');
       } catch (error) {
         console.error('Error running tier fix on startup:', error);
       }
     });
   })
   .catch(err => {
-    console.error('❌ Database connection error:', err);
+    console.error('❌ FATAL: Gagal konek ke database. Server tidak akan berjalan.', err);
     process.exit(1);
   });
 
