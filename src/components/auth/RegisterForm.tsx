@@ -63,7 +63,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onLoginClick }) 
 
   return (
     <>
-      <Card className="w-full max-w-md mx-auto">
+      <Card className="w-full max-w-md mx-auto animate-fadeIn">
       <CardHeader>
         <CardTitle className="text-center text-2xl">Create an Account</CardTitle>
       </CardHeader>

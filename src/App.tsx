@@ -26,8 +26,8 @@ import PointsTransactionOverviewPage from './components/dashboard/PointsTransact
 import OwnerTopUsersPage from './components/dashboard/OwnerTopUsersPage';
 import UserRedeemRequestsPage from './components/redeemRequests/UserRedeemRequestsPage';
 import ManagerRedeemRequestsPage from './components/redeemRequests/ManagerRedeemRequestsPage';
+import AuthLayout from './pages/AuthLayout';
 
-import { Award } from 'lucide-react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 
 const App: React.FC = () => {
@@ -81,42 +81,15 @@ const AppContent: React.FC = () => {
     }
   }, [isAuthenticated, currentUser, navigate, location.pathname]);
 
-  const renderAuthHeader = () => {
-    let text = "Setiap Transaksi, Selalu Ada Apresiasi";
-    if (location.pathname === '/register') {
-      text = "Create an account to start earning rewards";
-    } else if (location.pathname === '/forgot-password') {
-      text = "Reset your password";
-    }
-
-    return (
-      <>
-        <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="flex justify-center">
-            <div className="rounded-full bg-primary-100 p-3">
-              <Award className="h-12 w-12 text-primary-600" />
-            </div>
-          </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Bi Rewards</h2>
-          <p className="mt-2 text-center text-sm text-gray-600">{text}</p>
-        </div>
-      </>
-    );
-  };
-
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        {renderAuthHeader()}
-
-        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-          <Routes>
-            <Route path="/register" element={<RegisterForm onSuccess={() => navigate('/')} onLoginClick={() => navigate('/')} />} />
-            <Route path="/forgot-password" element={<ForgotPasswordForm onLoginClick={() => navigate('/')} />} />
-            <Route path="*" element={<LoginForm onRegisterClick={() => navigate('/register')} onForgotPasswordClick={() => navigate('/forgot-password')} />} />
-          </Routes>
-        </div>
-      </div>
+      <AuthLayout>
+        <Routes>
+          <Route path="/register" element={<RegisterForm onSuccess={() => navigate('/')} onLoginClick={() => navigate('/')} />} />
+          <Route path="/forgot-password" element={<ForgotPasswordForm onLoginClick={() => navigate('/')} />} />
+          <Route path="*" element={<LoginForm onRegisterClick={() => navigate('/register')} onForgotPasswordClick={() => navigate('/forgot-password')} />} />
+        </Routes>
+      </AuthLayout>
     );
   }
 

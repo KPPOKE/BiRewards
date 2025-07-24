@@ -69,7 +69,7 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onLoginClick })
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md mx-auto animate-fadeIn">
       <CardHeader>
         <CardTitle className="text-center text-2xl">Reset Password</CardTitle>
       </CardHeader>

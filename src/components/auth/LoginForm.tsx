@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/useAuth';
+import Input from '../ui/Input'; 
 import Button from '../ui/Button';
-import Input from '../ui/Input';
-import Card, { CardHeader, CardTitle, CardContent, CardFooter } from '../ui/Card';
-import { Mail, Lock, LogIn } from 'lucide-react';
+import { Award, Mail, Lock, LogIn } from 'lucide-react';
 
 interface LoginFormProps {
   onSuccess?: () => void;
-  onRegisterClick: () => void;
-  onForgotPasswordClick: () => void;
+  onRegisterClick?: () => void;
+  onForgotPasswordClick?: () => void;
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onRegisterClick, onForgotPasswordClick }) => {
@@ -40,72 +39,75 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onRegisterClick, onFor
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle className="text-center text-2xl">Login to Your Account</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="p-3 bg-red-100 border border-red-200 text-red-700 rounded-md text-sm">
-              {error}
-            </div>
-          )}
+    <div className="w-full max-w-sm p-8 space-y-4 bg-white rounded-xl shadow-lg animate-fadeIn">
+      <div className="text-center mb-6">
+        <div className="inline-block p-3 bg-[#b9956f] bg-opacity-20 rounded-full mb-4">
+          <Award className="text-[#b9956f]" size={40} />
+        </div>
+        <h1 className="text-2xl font-bold text-gray-800">Bi Rewards</h1>
+        <p className="text-gray-500 text-sm">Setiap Transaksi, Selalu Ada Apresiasi.</p>
+      </div>
 
+      <h2 className="text-xl font-semibold text-center text-gray-700">Login to Your Account</h2>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="p-3 bg-red-100 border border-red-200 text-red-700 rounded-md text-sm">
+            {error}
+          </div>
+        )}
+
+        <div>
+          <label htmlFor="email-login" className="text-sm font-medium text-gray-700">Email</label>
           <Input
-            label="Email"
             type="email"
+            id="email-login"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
             placeholder="Enter your email"
-            fullWidth
-            leftIcon={<Mail size={18} />}
+            leftIcon={<Mail className="h-5 w-5 text-gray-400" />}
+            className="w-full"
             required
           />
-
+        </div>
+        
+        <div>
+          <label htmlFor="password-login" className="text-sm font-medium text-gray-700">Password</label>
           <Input
-            label="Password"
             type="password"
+            id="password-login"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
             placeholder="Enter your password"
-            fullWidth
-            leftIcon={<Lock size={18} />}
+            leftIcon={<Lock className="h-5 w-5 text-gray-400" />}
+            className="w-full"
             required
           />
+        </div>
 
-          <Button
-            type="submit"
-            fullWidth
-            isLoading={isLoading}
-            leftIcon={<LogIn size={18} />}
-          >
-            Login
-          </Button>
-        </form>
-        <div className="text-center mt-4">
-          <button
-            onClick={onForgotPasswordClick}
-            className="text-sm text-gray-600 hover:text-primary-500"
+        <Button type="submit" className="w-full bg-[#b9956ff] hover:bg-[#b9956] text-white flex items-center justify-center gap-2" disabled={isLoading}>
+          <LogIn size={16} />
+          {isLoading ? 'Logging in...' : 'Login'}
+        </Button>
+
+        <div className="text-center">
+          <button 
             type="button"
+            onClick={onForgotPasswordClick} 
+            className="text-sm text-gray-600 hover:underline focus:outline-none"
           >
             Forgot Password?
           </button>
         </div>
-      </CardContent>
-      <CardFooter className="flex justify-center">
-        <p className="text-sm text-gray-600">
-          Don't have an account?{' '}
-          <button
-            onClick={onRegisterClick}
-            className="text-black hover:text-primary-500 font-medium"
-            type="button"
-          >
-            Register Now
-          </button>
-        </p>
-      </CardFooter>
-    </Card>
+      </form>
+      
+      <p className="text-center text-sm text-gray-600">
+        Don't have an account?{' '}
+        <button onClick={onRegisterClick} className="font-medium text-[#b9956f] hover:underline">
+          Register Now
+        </button>
+      </p>
+    </div>
   );
 };
 
