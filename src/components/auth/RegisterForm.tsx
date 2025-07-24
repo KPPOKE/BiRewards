@@ -3,8 +3,9 @@ import { useAuth } from '../../context/useAuth';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Card, { CardHeader, CardTitle, CardContent, CardFooter } from '../ui/Card';
-import { Mail, Lock, User, UserPlus, Phone } from 'lucide-react';
+import { Mail, Lock, User, UserPlus, Phone, Eye, EyeOff } from 'lucide-react';
 import OtpModal from './OtpModal';
+import PasswordStrengthMeter from './PasswordStrengthMeter';
 
 interface RegisterFormProps {
   onSuccess?: () => void;
@@ -18,6 +19,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onLoginClick }) 
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [otpModalOpen, setOtpModalOpen] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState('');
@@ -65,7 +68,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onLoginClick }) 
     <>
       <Card className="w-full max-w-md mx-auto animate-fadeIn">
       <CardHeader>
-        <CardTitle className="text-center text-2xl">Create an Account</CardTitle>
+        <CardTitle className="text-center text-2xl text-shadow">Create an Account</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -108,24 +111,29 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onLoginClick }) 
           
           <Input
             label="Password"
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Create a password"
             helperText="Password must be at least 6 characters"
             fullWidth
             leftIcon={<Lock size={18} />}
+            rightIcon={showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            onRightIconClick={() => setShowPassword(!showPassword)}
             required
           />
+          <PasswordStrengthMeter password={password} />
           
           <Input
             label="Confirm Password"
-            type="password"
+            type={showConfirmPassword ? 'text' : 'password'}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="Confirm your password"
             fullWidth
             leftIcon={<Lock size={18} />}
+            rightIcon={showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            onRightIconClick={() => setShowConfirmPassword(!showConfirmPassword)}
             required
           />
           
@@ -140,11 +148,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onLoginClick }) 
         </form>
       </CardContent>
       <CardFooter className="flex justify-center">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-300 text-shadow">
           Already have an account?{' '}
           <button
             onClick={onLoginClick}
-            className="text-black hover:text-primary-500 font-medium"
+            className="font-medium text-[#b9956f] hover:underline"
             type="button"
           >
             Login

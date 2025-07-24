@@ -7,6 +7,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   fullWidth?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
+  onRightIconClick?: () => void;
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
@@ -19,6 +20,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       className = '',
       leftIcon,
       rightIcon,
+      onRightIconClick,
       id,
       ...props
     },
@@ -42,7 +44,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="block text-sm font-medium text-gray-200 mb-1 text-shadow"
           >
             {label}
           </label>
@@ -62,10 +64,19 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             {...props}
           />
           {rightIcon && (
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-500">
-              {rightIcon}
-            </div>
-          )}
+            <div 
+              className={`absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 ${onRightIconClick ? 'cursor-pointer' : 'pointer-events-none'}`}
+              onClick={onRightIconClick}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') onRightIconClick?.();
+              }}
+              role={onRightIconClick ? "button" : undefined}
+              tabIndex={onRightIconClick ? 0 : -1}
+              aria-label={onRightIconClick ? "Toggle password visibility" : undefined}
+            >
+               {rightIcon}
+             </div>
+           )}
         </div>
         {helperText && !error && (
           <p id={`${inputId}-helper`} className="mt-1 text-sm text-gray-500">

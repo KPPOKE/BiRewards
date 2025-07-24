@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/useAuth';
 import Input from '../ui/Input'; 
 import Button from '../ui/Button';
-import { Award, Mail, Lock, LogIn } from 'lucide-react';
+import { Award, Mail, Lock, LogIn, Eye, EyeOff } from 'lucide-react';
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -14,6 +14,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onRegisterClick, onFor
   const { login, isLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,16 +40,16 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onRegisterClick, onFor
   };
 
   return (
-    <div className="w-full max-w-sm p-8 space-y-4 bg-white rounded-xl shadow-lg animate-fadeIn">
+    <div className="w-full max-w-sm p-8 space-y-4 bg-white/20 backdrop-blur-lg rounded-xl shadow-lg border border-white/30 animate-fadeIn">
       <div className="text-center mb-6">
         <div className="inline-block p-3 bg-[#b9956f] bg-opacity-20 rounded-full mb-4">
           <Award className="text-[#b9956f]" size={40} />
         </div>
-        <h1 className="text-2xl font-bold text-gray-800">Bi Rewards</h1>
-        <p className="text-gray-500 text-sm">Setiap Transaksi, Selalu Ada Apresiasi.</p>
+        <h1 className="text-2xl font-bold text-white text-shadow">Bi Rewards</h1>
+        <p className="text-gray-200 text-sm text-shadow">Setiap Transaksi, Selalu Ada Apresiasi.</p>
       </div>
 
-      <h2 className="text-xl font-semibold text-center text-gray-700">Login to Your Account</h2>
+      <h2 className="text-xl font-semibold text-center text-white text-shadow">Login to Your Account</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
@@ -58,7 +59,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onRegisterClick, onFor
         )}
 
         <div>
-          <label htmlFor="email-login" className="text-sm font-medium text-gray-700">Email</label>
+          <label htmlFor="email-login" className="text-sm font-medium text-gray-200 text-shadow">Email</label>
           <Input
             type="email"
             id="email-login"
@@ -72,14 +73,16 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onRegisterClick, onFor
         </div>
         
         <div>
-          <label htmlFor="password-login" className="text-sm font-medium text-gray-700">Password</label>
+          <label htmlFor="password-login" className="text-sm font-medium text-gray-200 text-shadow">Password</label>
           <Input
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             id="password-login"
             value={password}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
             placeholder="Enter your password"
             leftIcon={<Lock className="h-5 w-5 text-gray-400" />}
+            rightIcon={showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            onRightIconClick={() => setShowPassword(!showPassword)}
             className="w-full"
             required
           />
@@ -94,14 +97,14 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onRegisterClick, onFor
           <button 
             type="button"
             onClick={onForgotPasswordClick} 
-            className="text-sm text-gray-600 hover:underline focus:outline-none"
+            className="text-sm text-gray-300 hover:underline focus:outline-none text-shadow"
           >
             Forgot Password?
           </button>
         </div>
       </form>
       
-      <p className="text-center text-sm text-gray-600">
+      <p className="text-center text-sm text-gray-300 text-shadow">
         Don't have an account?{' '}
         <button onClick={onRegisterClick} className="font-medium text-[#b9956f] hover:underline">
           Register Now

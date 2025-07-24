@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .text-shadow {
+    text-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
+  }
+}
+
 @layer base {
   body {
     @apply bg-gray-50 text-gray-900;
