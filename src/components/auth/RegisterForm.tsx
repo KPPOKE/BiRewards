@@ -68,7 +68,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onLoginClick }) 
     <>
       <Card className="w-full max-w-md mx-auto animate-fadeIn">
       <CardHeader>
-        <CardTitle className="text-center text-2xl text-shadow">Create an Account</CardTitle>
+        <CardTitle className="text-center text-2xl text-white text-shadow">Create an Account</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -115,7 +115,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onLoginClick }) 
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Create a password"
-            helperText="Password must be at least 6 characters"
+            helperText="Password must be at least 6 characters. Use upper, lower, numbers, and symbols."
             fullWidth
             leftIcon={<Lock size={18} />}
             rightIcon={showPassword ? <EyeOff size={18} /> : <Eye size={18} />}

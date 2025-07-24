@@ -29,10 +29,10 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     const inputId = id || label ? label?.toLowerCase().replace(/\s+/g, '-') : undefined;
 
     const baseInputStyles = `
-      block rounded-md border border-gray-300 shadow-sm px-4 py-2
-      focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-primary-500 focus:border-primary-500
+      block rounded-md border border-white/20 shadow-sm px-4 py-2 bg-black/20 text-white placeholder:text-gray-400
+      focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-[#b9956f] focus:border-[#b9956f]
       disabled:opacity-50 disabled:cursor-not-allowed
-      ${error ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
+      ${error ? 'border-red-500/50 focus:ring-red-500 focus:border-red-500' : ''}
       ${fullWidth ? 'w-full' : 'w-auto'}
       ${leftIcon ? 'pl-10' : ''}
       ${rightIcon ? 'pr-10' : ''}
@@ -51,7 +51,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
         <div className="relative">
           {leftIcon && (
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-300">
               {leftIcon}
             </div>
           )}
@@ -65,7 +65,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           />
           {rightIcon && (
             <div 
-              className={`absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 ${onRightIconClick ? 'cursor-pointer' : 'pointer-events-none'}`}
+              className={`absolute inset-y-0 right-0 pr-3 flex items-center text-gray-300 ${onRightIconClick ? 'cursor-pointer' : 'pointer-events-none'}`}
               onClick={onRightIconClick}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') onRightIconClick?.();

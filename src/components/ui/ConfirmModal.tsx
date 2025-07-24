@@ -23,20 +23,20 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
 }) => {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-      <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-xs">
-        <h3 className="text-lg font-semibold mb-2">{title}</h3>
-        {description && <p className="text-gray-600 mb-4">{description}</p>}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm">
+      <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg shadow-lg p-6 w-full max-w-sm animate-fadeIn">
+        <h3 className="text-lg font-semibold mb-2 text-white text-shadow">{title}</h3>
+        {description && <p className="text-gray-300 mb-4 text-shadow">{description}</p>}
         {children}
         <div className="flex justify-end gap-2 mt-4">
           <button
-            className="px-4 py-2 rounded bg-gray-200 text-gray-800 hover:bg-gray-300"
+            className="px-4 py-2 rounded bg-white/10 hover:bg-white/20 text-white transition-colors"
             onClick={onCancel}
           >
             {cancelText}
           </button>
           <button
-            className="px-4 py-2 rounded bg-primary-600 text-white hover:bg-primary-700"
+            className="px-4 py-2 rounded bg-[#b9956f] text-white hover:bg-[#a9855f] transition-colors"
             onClick={onConfirm}
           >
             {confirmText}

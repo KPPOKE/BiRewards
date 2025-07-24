@@ -71,7 +71,7 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onLoginClick })
   return (
     <Card className="w-full max-w-md mx-auto animate-fadeIn">
       <CardHeader>
-        <CardTitle className="text-center text-2xl">Reset Password</CardTitle>
+        <CardTitle className="text-center text-2xl text-white text-shadow">Reset Password</CardTitle>
       </CardHeader>
       <CardContent>
         {message && (
@@ -130,11 +130,11 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onLoginClick })
         )}
       </CardContent>
       <CardFooter className="flex justify-center">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-300 text-shadow">
           Remember your password?{' '}
           <button
             onClick={onLoginClick}
-            className="text-black hover:text-primary-500 font-medium"
+            className="font-medium text-[#b9956f] hover:underline"
             type="button"
           >
             Back to Login

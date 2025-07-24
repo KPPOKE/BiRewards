@@ -63,11 +63,8 @@ const OtpModal: React.FC<OtpModalProps> = ({ open, email, onClose, onSuccess }) 
         placeholder="Enter OTP"
         fullWidth
       />
-      {error && <div className="text-red-600 text-sm mt-2">{error}</div>}
-      {successMsg && <div className="text-green-600 text-sm mt-2">{successMsg}</div>}
-      <Button fullWidth isLoading={loading} onClick={handleVerify} className="mt-4">
-        Verify
-      </Button>
+      {error && <div className="text-red-300 text-sm mt-2 text-shadow">{error}</div>}
+      {successMsg && <div className="text-green-300 text-sm mt-2 text-shadow">{successMsg}</div>}
     </Modal>
   );
 };

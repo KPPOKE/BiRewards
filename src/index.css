@@ -4,7 +4,18 @@
 
 @layer utilities {
   .text-shadow {
-    text-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Custom styles for browser autofill */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-text-fill-color: #fff !important; /* Ensures text is white */
+    -webkit-box-shadow: 0 0 0px 1000px rgba(0, 0, 0, 0.2) inset !important; /* Overrides background color */
+    transition: background-color 5000s ease-in-out 0s; /* Prevents background color change */
+    caret-color: #fff;
   }
 }
 
