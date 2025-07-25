@@ -86,6 +86,15 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onRegisterClick, onFor
             className="w-full"
             required
           />
+          <div className="flex justify-start">
+            <button
+              type="button"
+              onClick={onForgotPasswordClick}
+              className="text-sm text-gray-300 hover:underline text-shadow"
+            >
+              Forgot Password?
+            </button>
+          </div>
         </div>
 
         <Button type="submit" className="w-full bg-[#b9956ff] hover:bg-[#b9956] text-white flex items-center justify-center gap-2" disabled={isLoading}>
@@ -93,23 +102,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onRegisterClick, onFor
           {isLoading ? 'Logging in...' : 'Login'}
         </Button>
 
-        <div className="text-center">
-          <button 
-            type="button"
-            onClick={onForgotPasswordClick} 
-            className="text-sm text-gray-300 hover:underline focus:outline-none text-shadow"
-          >
-            Forgot Password?
+        <p className="text-center text-sm text-gray-300 text-shadow">
+          Don't have an account?{' '}
+          <button onClick={onRegisterClick} className="font-medium text-[#b9956f] hover:underline">
+            Register Now
           </button>
-        </div>
+        </p>
       </form>
-      
-      <p className="text-center text-sm text-gray-300 text-shadow">
-        Don't have an account?{' '}
-        <button onClick={onRegisterClick} className="font-medium text-[#b9956f] hover:underline">
-          Register Now
-        </button>
-      </p>
     </div>
   );
 };
